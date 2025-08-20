@@ -1,0 +1,117 @@
+.navbar, :root { --nav-height: 76px; }
+.navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  z-index: 1000;
+  padding: 8px 16px; /* padding interno estable */
+  height: var(--nav-height); /* altura fija */
+}
+
+.navbar::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  border-radius: 18px 18px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+body[data-theme="dark"] .navbar::before {
+  background: rgba(17,24,39,0.65);
+  border-top-color: rgba(255,255,255,0.08);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.35);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-icon {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  padding: 12px 12px;
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  text-align: center;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon:hover {
+  transform: translateY(-2px);
+  background-color: rgba(0,0,0,0.04);
+}
+
+.nav-icon:active {
+  transform: translateY(0);
+  background-color: rgba(0,0,0,0.06);
+}
+
+.nav-icon.active {
+  background-color: #111827;
+  color: white;
+}
+
+body[data-theme="dark"] .nav-icon {
+  color: #e5e7eb;
+}
+
+body[data-theme="dark"] .nav-icon.active {
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+/* Botón central acentuado pero alineado */
+.nav-icon:nth-child(2) {
+  background: linear-gradient(135deg, #f59e0b 0%, #facc15 100%);
+  color: #111827;
+  box-shadow: 0 10px 22px rgba(245, 158, 11, 0.30);
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 428px) {
+  .navbar {
+    padding: 8px 14px;
+  }
+  
+  .nav-icon {
+    font-size: 1.4rem;
+    padding: 10px;
+  }
+}
+
+/* Para pantallas medianas y grandes */
+@media (min-width: 768px) {
+  .navbar {
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navbar {
+    max-width: 700px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .navbar {
+    max-width: 800px;
+  }
+}
