@@ -14,6 +14,7 @@ function Upload() {
     breed: "",
     gender: "",
     age: "",
+    type: "", // Tipo de mascota: Perro, Gato, Conejo, etc.
   });
   const navigate = useNavigate();
 
@@ -45,15 +46,21 @@ function Upload() {
       alert('Selecciona un archivo o pega un enlace de imagen');
       return;
     }
+    if (!petData.name || !petData.type) {
+      alert('Debes llenar al menos el nombre y el tipo de mascota');
+      return;
+    }
+
     const newPet = {
       ...petData,
       img: previewUrl || imageUrl,
     };
+
     try {
       const existing = JSON.parse(localStorage.getItem('pets') || '[]');
       const updated = [newPet, ...existing];
       localStorage.setItem('pets', JSON.stringify(updated));
-      alert('Mascota guardada');
+      alert('Mascota guardada correctamente');
       navigate('/');
     } catch (e) {
       console.error('Error saving pet to localStorage', e);
@@ -115,23 +122,43 @@ function Upload() {
             <label>Nombre</label>
             <input type="text" value={petData.name} onChange={(e) => handleInputChange('name', e.target.value)} />
           </div>
+
           <div className="form-group">
             <label>Ubicación</label>
             <input type="text" value={petData.location} onChange={(e) => handleInputChange('location', e.target.value)} />
           </div>
+
           <div className="form-group">
             <label>Raza</label>
             <input type="text" value={petData.breed} onChange={(e) => handleInputChange('breed', e.target.value)} />
           </div>
+
           <div className="form-group">
             <label>Género</label>
             <input type="text" value={petData.gender} onChange={(e) => handleInputChange('gender', e.target.value)} />
           </div>
+
           <div className="form-group">
             <label>Edad</label>
             <input type="text" value={petData.age} onChange={(e) => handleInputChange('age', e.target.value)} />
           </div>
-          <button className="save-button" style={{ marginTop: 12 }} onClick={handleSavePet}>Guardar mascota</button>
+
+          <div className="form-group">
+            <label>Tipo de mascota</label>
+            <select value={petData.type} onChange={(e) => handleInputChange('type', e.target.value)}>
+              <option value="">Selecciona un tipo</option>
+              <option value="Perro">Perro</option>
+              <option value="Gato">Gato</option>
+              <option value="Conejo">Conejo</option>
+              <option value="Erizo">Erizo</option>
+              <option value="Hamster">Hamster</option>
+              <option value="Loro">Loro</option>
+            </select>
+          </div>
+
+          <button className="save-button" style={{ marginTop: 12 }} onClick={handleSavePet}>
+            Guardar mascota
+          </button>
         </div>
       </main>
 

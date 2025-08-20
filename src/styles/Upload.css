@@ -12,6 +12,10 @@
   margin-right: auto;
 }
 
+body[data-theme="dark"] .upload-title {
+  color: #60a5fa;
+}
+
 .upload-description {
   font-size: 0.9rem;
   color: #666;
@@ -21,6 +25,10 @@
   max-width: 320px;
   margin-left: auto;
   margin-right: auto;
+}
+
+body[data-theme="dark"] .upload-description {
+  color: #9ca3af;
 }
 
 .upload-main {
@@ -131,8 +139,8 @@
 
 body[data-theme="dark"] .upload-box,
 body[data-theme="dark"] .upload-form {
-  background: rgba(17,24,39,0.65);
-  border-color: rgba(255,255,255,0.08);
+  background: rgba(31,41,55,0.85);
+  border-color: rgba(255,255,255,0.15);
   box-shadow: 0 16px 34px rgba(0,0,0,0.35);
 }
 
@@ -160,6 +168,10 @@ body[data-theme="dark"] .upload-form {
   color: #6b7280;
 }
 
+body[data-theme="dark"] .form-group label {
+  color: #d1d5db;
+}
+
 .form-group input {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -171,13 +183,17 @@ body[data-theme="dark"] .upload-form {
 }
 
 body[data-theme="dark"] .form-group input {
-  background: rgba(17,24,39,0.7);
-  border-color: rgba(255,255,255,0.08);
-  color: #e5e7eb;
+  background: rgba(55,65,81,0.9);
+  border-color: rgba(255,255,255,0.2);
+  color: #f9fafb;
 }
 
 .form-group input::placeholder {
   color: #9ca3af;
+}
+
+body[data-theme="dark"] .form-group input::placeholder {
+  color: #6b7280;
 }
 
 .save-button {
@@ -189,6 +205,17 @@ body[data-theme="dark"] .form-group input {
   width: 100%;
   font-weight: 800;
   box-shadow: 0 12px 26px rgba(17, 24, 39, 0.35);
+}
+
+body[data-theme="dark"] .save-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 12px 26px rgba(59, 130, 246, 0.35);
+}
+
+body[data-theme="dark"] .save-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(59, 130, 246, 0.45);
 }
 
 /* Responsive para pantallas medianas */

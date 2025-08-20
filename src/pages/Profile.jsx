@@ -53,14 +53,6 @@ function Profile() {
 
   return (
     <div className="container">
-      {/* Top bar con tiempo y batería */}
-      <div className="top-bar">
-        <span className="time">9:41</span>
-        <div className="status-icons">
-          <span className="signal">📶</span>
-          <span className="battery">🔋</span>
-        </div>
-      </div>
 
       {/* Header con flecha de regreso y título */}
       <header className="profile-header">

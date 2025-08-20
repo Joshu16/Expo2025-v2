@@ -1,0 +1,132 @@
+.adopt-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 2rem 1rem 100px; /* padding-bottom aumentado para navbar */
+  }
+  
+  .adopt-container h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  
+  body[data-theme="dark"] .adopt-container h1 {
+    color: #f9fafb;
+  }
+  
+  .pet-img {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 18px;
+    margin: 0 auto;
+    display: block;
+  }
+  
+  .adopt-container p {
+    font-size: 1rem;
+    color: #111827;
+  }
+  
+  body[data-theme="dark"] .adopt-container p {
+    color: #f3f4f6;
+  }
+  
+  .adopt-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .adopt-form label {
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  body[data-theme="dark"] .adopt-form label {
+    color: #f9fafb;
+  }
+  
+  .adopt-form input {
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    outline: none;
+    font-size: 1rem;
+    color: #111827;
+    background: #ffffff;
+  }
+  
+  body[data-theme="dark"] .adopt-form input {
+    background: rgba(31,41,55,0.85);
+    border-color: rgba(255,255,255,0.2);
+    color: #f9fafb;
+  }
+  
+  .adopt-form input::placeholder {
+    color: #6b7280;
+  }
+  
+  body[data-theme="dark"] .adopt-form input::placeholder {
+    color: #d1d5db;
+  }
+  
+  .adopt-form button {
+    padding: 1rem;
+    border-radius: 25px;
+    border: none;
+    background: linear-gradient(135deg, #f5b100 0%, #f7931e 100%);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .adopt-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 177, 0, 0.4);
+  }
+  
+  .adoption-completed {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .adoption-completed h2 {
+    color: #16a34a;
+  }
+  
+  .adoption-completed button {
+    padding: 1rem;
+    border-radius: 25px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  .adoption-completed button:hover {
+    background: #1d4ed8;
+  }
+  
+  /* Responsive */
+  @media (max-width: 428px) {
+    .adopt-container {
+      padding: 1rem 1rem 100px; /* padding-bottom suficiente para navbar */
+    }
+    .adopt-form input {
+      font-size: 0.95rem;
+    }
+    .adopt-form button {
+      font-size: 1rem;
+      padding: 0.85rem;
+    }
+    .adopt-container p {
+      font-size: 0.95rem;
+    }
+  }
+  
