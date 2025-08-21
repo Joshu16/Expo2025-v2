@@ -56,8 +56,9 @@ function Profile() {
 
       {/* Header con flecha de regreso y título */}
       <header className="profile-header">
-        <button className="back-button">←</button>
+        <br></br>
         <h1 className="profile-title">Edit Profile</h1>
+        <br></br>
       </header>
 
       <main className="profile-main">

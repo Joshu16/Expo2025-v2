@@ -86,11 +86,12 @@
 
 .camera-overlay {
   position: absolute;
-  bottom: 0;
-  right: 0;
+  bottom: 8px; /* un poco arriba del borde inferior */
+  left: 50%;    /* centrado horizontal */
+  transform: translateX(-50%); /* ajusta la posición horizontal */
   background: #8b5cf6;
-  width: 32px;
-  height: 32px;
+  width: 36px;  /* puedes ajustar tamaño */
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -99,6 +100,11 @@
   cursor: pointer;
   transition: transform 0.2s ease;
 }
+
+.camera-overlay:hover {
+  transform: translateX(-50%) scale(1.1); /* mantener centrado al hacer hover */
+}
+
 
 .camera-overlay:hover {
   transform: scale(1.1);

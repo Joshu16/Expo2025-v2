@@ -51,7 +51,7 @@ function Home() {
             gender: "Macho",
             age: "1 año",
             location: "Heredia",
-            img: "https://images.unsplash.com/photo-1584551246675-5196c8c2c6c6?q=80&w=800&auto=format&fit=crop",
+            img: "https://www.abene.com.mx/cdn/shop/articles/shutterstock_151119362.jpg?v=1620270612",
             type: "Erizo"
           }
         ];
