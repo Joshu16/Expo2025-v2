@@ -55,12 +55,12 @@ function Favorites() {
 
   return (
     <div className="container">
-      <header>
-        <h2 className="logo-text">Favoritos</h2>
+      <header className="modern-header">
+        <h2 className="section-title">Favoritos</h2>
         <p className="page-subtitle">Tus mascotas favoritas</p>
       </header>
 
-      <main className="favorites-main">
+      <main className="main-content">
         {/* Filtros */}
         <div className="filter-tabs">
           <button 

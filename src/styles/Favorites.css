@@ -42,21 +42,24 @@
 
 .favorites-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+  padding: 0;
 }
 
 .favorite-card {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
 .favorite-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
 }
 
 .pet-image {
@@ -64,13 +67,15 @@
   height: 200px;
   overflow: hidden;
   cursor: pointer;
+  width: 100%;
 }
 
 .pet-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-slow);
+  display: block;
 }
 
 .pet-image:hover img {

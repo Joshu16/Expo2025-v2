@@ -139,17 +139,32 @@
     margin-bottom: var(--space-md);
   }
   
-  /* Nuevos estilos para el header de la mascota */
-  .pet-header {
+  /* Estilos para el header de la mascota */
+  .pet-section {
     display: flex;
-    gap: 20px;
-    margin-bottom: 30px;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
   }
 
   .pet-image-container {
     position: relative;
-    flex-shrink: 0;
+    width: 100%;
+    height: 300px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+
+  .pet-detail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+  }
+
+  .pet-detail-image:hover {
+    transform: scale(1.02);
   }
 
   .favorite-button {

@@ -103,6 +103,26 @@ function Home() {
     navigate("/adopt", { state: { pet } });
   };
 
+  const handleUploadClick = () => {
+    navigate("/upload");
+  };
+
+  const handleTrackingClick = () => {
+    navigate("/tracking");
+  };
+
+  const handleChatClick = () => {
+    navigate("/chat");
+  };
+
+  const handleSheltersClick = () => {
+    navigate("/shelters");
+  };
+
+  const handleNotificationsClick = () => {
+    navigate("/notifications");
+  };
+
   const toggleFavorite = (pet, e) => {
     e.stopPropagation();
     try {
@@ -134,61 +154,117 @@ function Home() {
 
   return (
     <div className="container" style={{ paddingBottom: '90px' }}>
-      <header>
-        <h2 className="logo-text">ANIMALS</h2>
-        <div className="home-greeting">
-          <div className="greeting-text">
-            <p className="greeting-subtitle">Buenos días,</p>
-            <h1 className="greeting-title">{user.name || "Amigo"}</h1>
-            {user.country && <span className="greeting-location">📍 {user.country}</span>}
+      <header className="modern-header">
+        <div className="header-top">
+          <div className="greeting-section">
+            <h1 className="greeting-title">Hola, {user.name || "Amigo"} 👋</h1>
+            <p className="greeting-subtitle">Encuentra tu compañero perfecto</p>
           </div>
+          <div className="user-avatar" onClick={() => navigate('/profile')}>
+            <div className="avatar-circle">
+              <span className="avatar-text">{(user.name || "A").charAt(0).toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="search-container">
+          <div className="search-bar">
+            <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar mascotas..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="search-input"
+            />
+            <button className="filter-button" onClick={handleSearchClick}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M3 7H21M9 12H21M17 17H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Acciones rápidas */}
+        <div className="quick-actions">
+          <button className="quick-action-btn" onClick={handleUploadClick}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Subir mascota</span>
+          </button>
+          <button className="quick-action-btn" onClick={handleTrackingClick}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Seguimiento</span>
+          </button>
+          <button className="quick-action-btn" onClick={handleChatClick}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Mensajes</span>
+          </button>
+          <button className="quick-action-btn" onClick={handleSheltersClick}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Refugios</span>
+          </button>
         </div>
       </header>
 
-      <main>
-        <div className="search-pill">
-          <span className="search-emoji">🔍</span>
-          <input
-            type="text"
-            placeholder="Buscar mascotas..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <main className="main-content">
+        <div className="section-header">
+          <h2 className="section-title">Mascotas disponibles</h2>
+          <span className="pets-count">{filteredPets.length} mascotas</span>
         </div>
 
-        <div className="cards">
+        <div className="pets-grid">
           {filteredPets.map((pet, index) => (
             <div
               key={index}
-              className="card"
+              className="pet-card"
               onClick={() => handleCardClick(pet)}
-              style={{ cursor: "pointer" }}
             >
-              <div className="card-image-container">
-                <img src={pet.img} alt={pet.name} />
+              <div className="pet-image-wrapper">
+                <img src={pet.img} alt={pet.name} className="pet-image" />
                 <button 
-                  className={`favorite-button ${isFavorite(pet) ? 'active' : ''}`}
+                  className={`favorite-btn ${isFavorite(pet) ? 'favorited' : ''}`}
                   onClick={(e) => toggleFavorite(pet, e)}
-                  title={isFavorite(pet) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                   </svg>
                 </button>
+                <div className="pet-type-badge">{pet.type}</div>
               </div>
-              <div className="card-info">
-                <h3>{pet.name} ({pet.type})</h3>
-                <p>{pet.breed} • {pet.gender} • {pet.age}</p>
-                <span>{pet.location}</span>
+              
+              <div className="pet-content">
+                <h3 className="pet-name">{pet.name}</h3>
+                <p className="pet-details">{pet.breed} • {pet.gender}</p>
+                <div className="pet-meta">
+                  <span className="pet-age">{pet.age}</span>
+                  <span className="pet-location">📍 {pet.location}</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </main>
 
-      <div className="search-button">
-        <button onClick={handleSearchClick}>¿Qué amiguito buscas?</button>
-      </div>
+        {filteredPets.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-icon">🐾</div>
+            <h3>No se encontraron mascotas</h3>
+            <p>Intenta ajustar tu búsqueda o explorar todas las categorías</p>
+            <button className="explore-btn" onClick={handleSearchClick}>
+              Explorar categorías
+            </button>
+          </div>
+        )}
+      </main>
 
       <NavBar />
     </div>

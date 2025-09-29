@@ -104,12 +104,12 @@ function Chat() {
 
   return (
     <div className="container">
-      <header>
-        <h2 className="logo-text">Mensajes</h2>
+      <header className="modern-header">
+        <h2 className="section-title">Mensajes</h2>
         <p className="page-subtitle">Comunícate con otros usuarios</p>
       </header>
 
-      <main className="chat-main">
+      <main className="main-content">
         <div className="chat-container">
           {/* Lista de conversaciones */}
           <div className="conversations-sidebar">

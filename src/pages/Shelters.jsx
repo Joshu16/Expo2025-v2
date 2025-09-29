@@ -102,14 +102,14 @@ function Shelters() {
   if (selectedShelter) {
     return (
       <div className="container">
-        <header>
+        <header className="modern-header">
           <button className="back-button" onClick={handleBackToList}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
             </svg>
             Volver
           </button>
-          <h2 className="logo-text">Detalles del Refugio</h2>
+          <h2 className="section-title">Detalles del Refugio</h2>
         </header>
 
         <main className="shelter-details-main">
@@ -202,12 +202,12 @@ function Shelters() {
 
   return (
     <div className="container">
-      <header>
-        <h2 className="logo-text">Refugios</h2>
+      <header className="modern-header">
+        <h2 className="section-title">Refugios</h2>
         <p className="page-subtitle">Conecta con organizaciones de rescate animal</p>
       </header>
 
-      <main className="shelters-main">
+      <main className="main-content">
         {/* Búsqueda */}
         <div className="search-section">
           <div className="search-box">

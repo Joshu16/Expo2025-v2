@@ -53,12 +53,12 @@ function Tracking() {
 
   return (
     <div className="container">
-      <header>
-        <h2 className="logo-text">Seguimiento</h2>
+      <header className="modern-header">
+        <h2 className="section-title">Seguimiento</h2>
         <p className="page-subtitle">Gestiona tus adopciones</p>
       </header>
 
-      <main className="tracking-main">
+      <main className="main-content">
         {/* Filtros */}
         <div className="filter-tabs">
           <button 

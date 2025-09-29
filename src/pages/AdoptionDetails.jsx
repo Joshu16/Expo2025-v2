@@ -105,8 +105,8 @@ function AdoptionDetails() {
       <main className="adoption-details-main">
         {/* Información de la mascota */}
         <div className="pet-section">
-          <div className="pet-image">
-            <img src={adoption.pet.img} alt={adoption.pet.name} />
+          <div className="pet-image-container">
+            <img src={adoption.pet.img} alt={adoption.pet.name} className="pet-detail-image" />
           </div>
           <div className="pet-info">
             <h1>{adoption.pet.name}</h1>

@@ -10,32 +10,12 @@ function NavBar() {
     navigate('/');
   };
 
-  const handleUploadClick = () => {
-    navigate('/upload');
-  };
-
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
-
-  const handleTrackingClick = () => {
-    navigate('/tracking');
-  };
-
-  const handleChatClick = () => {
-    navigate('/chat');
-  };
-
   const handleFavoritesClick = () => {
     navigate('/favorites');
   };
 
-  const handleSheltersClick = () => {
-    navigate('/shelters');
-  };
-
-  const handleNotificationsClick = () => {
-    navigate('/notifications');
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
   return (
@@ -50,15 +30,6 @@ function NavBar() {
         </svg>
       </div>
       <div
-        className={`nav-icon ${location.pathname === '/tracking' ? 'active' : ''}`}
-        title="Seguimiento"
-        onClick={handleTrackingClick}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      </div>
-      <div
         className={`nav-icon ${location.pathname === '/favorites' ? 'active' : ''}`}
         title="Favoritos"
         onClick={handleFavoritesClick}
@@ -68,30 +39,12 @@ function NavBar() {
         </svg>
       </div>
       <div
-        className={`nav-icon ${location.pathname === '/chat' ? 'active' : ''}`}
-        title="Mensajes"
-        onClick={handleChatClick}
+        className={`nav-icon ${location.pathname === '/profile' ? 'active' : ''}`}
+        title="Perfil"
+        onClick={handleProfileClick}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-      </div>
-      <div
-        className={`nav-icon ${location.pathname === '/shelters' ? 'active' : ''}`}
-        title="Refugios"
-        onClick={handleSheltersClick}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-      </div>
-      <div
-        className={`nav-icon ${location.pathname === '/notifications' ? 'active' : ''}`}
-        title="Notificaciones"
-        onClick={handleNotificationsClick}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
         </svg>
       </div>
     </nav>
