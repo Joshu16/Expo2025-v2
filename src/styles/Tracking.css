@@ -1,0 +1,185 @@
+.tracking-main {
+  padding: 20px 0;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.filter-tab {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.filter-tab:hover {
+  background: var(--hover-bg);
+}
+
+.filter-tab.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.adoptions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adoption-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adoption-card:hover {
+  background: var(--hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.adoption-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.adoption-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adoption-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adoption-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pet-details {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.adoption-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.adoption-arrow {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin: 0 0 20px 0;
+  color: var(--text-secondary);
+}
+
+.primary-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.page-subtitle {
+  margin: 8px 0 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .filter-tabs {
+    gap: 6px;
+  }
+  
+  .filter-tab {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .adoption-card {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .adoption-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .adoption-meta {
+    gap: 8px;
+  }
+}

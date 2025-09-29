@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
+import { initializeSampleData } from "../utils/sampleData.js";
 
 function Home() {
   const navigate = useNavigate();
@@ -14,11 +15,15 @@ function Home() {
   const categoryFilter = location.state?.category || "";
 
   useEffect(() => {
+    // Inicializar datos de ejemplo
+    initializeSampleData();
+    
     try {
       let stored = JSON.parse(localStorage.getItem("pets") || "[]");
       if (!stored || stored.length === 0) {
         stored = [
           {
+            id: 1,
             name: "Bobby",
             breed: "Mestizo",
             gender: "Macho",
@@ -28,6 +33,7 @@ function Home() {
             type: "Perro"
           },
           {
+            id: 2,
             name: "Luna",
             breed: "Siames",
             gender: "Hembra",
@@ -37,6 +43,7 @@ function Home() {
             type: "Gato"
           },
           {
+            id: 3,
             name: "Max",
             breed: "Labrador",
             gender: "Macho",
@@ -46,6 +53,7 @@ function Home() {
             type: "Perro"
           },
           {
+            id: 4,
             name: "Spike",
             breed: "Erizo Africano",
             gender: "Macho",
@@ -95,6 +103,35 @@ function Home() {
     navigate("/adopt", { state: { pet } });
   };
 
+  const toggleFavorite = (pet, e) => {
+    e.stopPropagation();
+    try {
+      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+      const isFavorite = favorites.some(fav => fav.id === pet.id);
+      
+      if (isFavorite) {
+        // Remover de favoritos
+        const updatedFavorites = favorites.filter(fav => fav.id !== pet.id);
+        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+      } else {
+        // Agregar a favoritos
+        const updatedFavorites = [...favorites, { ...pet, id: pet.id || Date.now() }];
+        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+      }
+    } catch (e) {
+      console.error("Error updating favorites", e);
+    }
+  };
+
+  const isFavorite = (pet) => {
+    try {
+      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+      return favorites.some(fav => fav.id === pet.id);
+    } catch (e) {
+      return false;
+    }
+  };
+
   return (
     <div className="container" style={{ paddingBottom: '90px' }}>
       <header>
@@ -127,7 +164,18 @@ function Home() {
               onClick={() => handleCardClick(pet)}
               style={{ cursor: "pointer" }}
             >
-              <img src={pet.img} alt={pet.name} />
+              <div className="card-image-container">
+                <img src={pet.img} alt={pet.name} />
+                <button 
+                  className={`favorite-button ${isFavorite(pet) ? 'active' : ''}`}
+                  onClick={(e) => toggleFavorite(pet, e)}
+                  title={isFavorite(pet) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+              </div>
               <div className="card-info">
                 <h3>{pet.name} ({pet.type})</h3>
                 <p>{pet.breed} • {pet.gender} • {pet.age}</p>

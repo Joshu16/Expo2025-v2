@@ -174,7 +174,56 @@ body[data-theme="dark"] .card {
 }
 
 .card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(31, 41, 55, 0.12); }
+.card-image-container {
+  position: relative;
+}
+
 .card img { width: 100%; height: 140px; object-fit: cover; }
+
+.favorite-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.favorite-button:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.favorite-button.active {
+  color: #ef4444;
+}
+
+.favorite-button:not(.active) {
+  color: #9ca3af;
+}
+
+body[data-theme="dark"] .favorite-button {
+  background: rgba(31, 41, 55, 0.9);
+  color: #d1d5db;
+}
+
+body[data-theme="dark"] .favorite-button:hover {
+  background: rgba(31, 41, 55, 1);
+}
+
+body[data-theme="dark"] .favorite-button.active {
+  color: #ef4444;
+}
+
 .card-info { padding: 0.75rem; }
 .card-info h3 { margin-bottom: 0.25rem; font-size: 1.05rem; color: #111827; font-weight: 800; }
 body[data-theme="dark"] .card-info h3 { color: #f9fafb; }
