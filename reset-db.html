@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resetear Base de Datos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #0056CC;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .danger {
+            background: #FF3B30;
+        }
+        .danger:hover {
+            background: #D70015;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Resetear y Poblar Base de Datos</h1>
+        <p>Este script limpiará tu base de datos y la poblará con solo 2 mascotas de ejemplo y las categorías necesarias.</p>
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <strong>⚠️ Advertencia:</strong> Esto eliminará todas las mascotas, favoritos y solicitudes de adopción existentes.
+        </div>
+        
+        <button onclick="resetDatabase()" id="resetBtn" class="danger">
+            🗑️ Resetear Base de Datos
+        </button>
+        
+        <button onclick="populateDatabase()" id="populateBtn">
+            📝 Poblar con Datos de Ejemplo
+        </button>
+        
+        <button onclick="testConnection()" id="testBtn">
+            🧪 Probar Conexión
+        </button>
+        
+        <div id="status"></div>
+        
+        <div id="instructions" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>Primero haz clic en "Probar Conexión" para verificar Firebase</li>
+                <li>Luego haz clic en "Resetear Base de Datos" para limpiar todo</li>
+                <li>Finalmente haz clic en "Poblar con Datos de Ejemplo" para crear el contenido</li>
+                <li>Ve a tu aplicación y verifica que todo funcione correctamente</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZ28tY4uu7Ec0pou2vQl9PlEiqU0IFc4U",
+            authDomain: "animals-adoption-app.firebaseapp.com",
+            projectId: "animals-adoption-app",
+            storageBucket: "animals-adoption-app.firebasestorage.app",
+            messagingSenderId: "360360840693",
+            appId: "1:360360840693:web:f81ab7be2be926eca5a4bc",
+            measurementId: "G-HDDQLXGS7R"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.textContent = 'Probando...';
+            
+            try {
+                showStatus('🧪 Probando conexión a Firebase...', 'info');
+                
+                // Intentar crear un documento de prueba
+                const testData = {
+                    message: 'Test de conexión Firebase',
+                    timestamp: new Date().toISOString(),
+                    test: true
+                };
+                
+                const docRef = await addDoc(collection(db, 'test'), testData);
+                console.log('✅ Documento de prueba creado con ID:', docRef.id);
+                
+                showStatus('🎉 ¡Conexión a Firebase exitosa!', 'success');
+            } catch (error) {
+                console.error('❌ Error de conexión a Firebase:', error);
+                showStatus('❌ Error de conexión a Firebase: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🧪 Probar Conexión';
+            }
+        }
+
+        async function resetDatabase() {
+            const btn = document.getElementById('resetBtn');
+            btn.disabled = true;
+            btn.textContent = 'Limpiando...';
+            
+            try {
+                showStatus('🗑️ Limpiando base de datos...', 'warning');
+                
+                // Limpiar mascotas
+                const petsSnapshot = await getDocs(collection(db, 'pets'));
+                for (const petDoc of petsSnapshot.docs) {
+                    await deleteDoc(doc(db, 'pets', petDoc.id));
+                }
+                console.log(`✅ ${petsSnapshot.size} mascotas eliminadas`);
+                
+                // Limpiar favoritos
+                const favoritesSnapshot = await getDocs(collection(db, 'favorites'));
+                for (const favDoc of favoritesSnapshot.docs) {
+                    await deleteDoc(doc(db, 'favorites', favDoc.id));
+                }
+                console.log(`✅ ${favoritesSnapshot.size} favoritos eliminados`);
+                
+                // Limpiar solicitudes de adopción
+                const requestsSnapshot = await getDocs(collection(db, 'adoptionRequests'));
+                for (const reqDoc of requestsSnapshot.docs) {
+                    await deleteDoc(doc(db, 'adoptionRequests', reqDoc.id));
+                }
+                console.log(`✅ ${requestsSnapshot.size} solicitudes eliminadas`);
+                
+                // Limpiar categorías
+                const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+                for (const catDoc of categoriesSnapshot.docs) {
+                    await deleteDoc(doc(db, 'categories', catDoc.id));
+                }
+                console.log(`✅ ${categoriesSnapshot.size} categorías eliminadas`);
+                
+                showStatus('✅ Base de datos limpiada exitosamente!', 'success');
+            } catch (error) {
+                console.error('❌ Error limpiando base de datos:', error);
+                showStatus('❌ Error limpiando base de datos: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🗑️ Resetear Base de Datos';
+            }
+        }
+
+        async function populateDatabase() {
+            const btn = document.getElementById('populateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Poblando...';
+            
+            try {
+                showStatus('📝 Poblando base de datos con datos de ejemplo...', 'info');
+                
+                // Crear categorías
+                const categories = [
+                    {
+                        name: "PERRITOS",
+                        image: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=center",
+                        bgColor: "#1e3a8a",
+                        type: "Perro",
+                        description: "Encuentra tu mejor amigo canino",
+                        petCount: 1
+                    },
+                    {
+                        name: "GATITOS",
+                        image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=300&fit=crop&crop=center",
+                        bgColor: "#fbbf24",
+                        type: "Gato",
+                        description: "Gatos independientes y cariñosos",
+                        petCount: 1
+                    }
+                ];
+                
+                for (const category of categories) {
+                    await addDoc(collection(db, 'categories'), {
+                        ...category,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                console.log('✅ Categorías creadas');
+                
+                // Crear usuario de prueba primero
+                const testUser = {
+                    name: "Usuario de Prueba",
+                    email: "test@example.com",
+                    phone: "123456789",
+                    address: "Ciudad de Prueba",
+                    isShelter: false,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                };
+                
+                const userRef = await addDoc(collection(db, 'users'), testUser);
+                const ownerId = userRef.id;
+                console.log('✅ Usuario de prueba creado con ID:', ownerId);
+                
+                // Crear solo 2 mascotas con el ownerId real
+                const pets = [
+                    {
+                        name: "Bobby",
+                        breed: "Mestizo",
+                        gender: "Macho",
+                        age: "2 años",
+                        location: "San José",
+                        img: "https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=800&auto=format&fit=crop",
+                        type: "Perro",
+                        status: "available",
+                        ownerId: ownerId,
+                        description: "Bobby es un perro muy cariñoso y juguetón. Le encanta jugar con niños y es muy obediente.",
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        name: "Luna",
+                        breed: "Siames",
+                        gender: "Hembra",
+                        age: "1 año",
+                        location: "Cartago",
+                        img: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=800&auto=format&fit=crop",
+                        type: "Gato",
+                        status: "available",
+                        ownerId: ownerId,
+                        description: "Luna es una gata muy independiente pero cariñosa. Es perfecta para una familia tranquila.",
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                for (const pet of pets) {
+                    await addDoc(collection(db, 'pets'), pet);
+                }
+                console.log('✅ Mascotas creadas');
+                
+                showStatus('✅ Base de datos poblada exitosamente!<br>📊 Creado: 1 usuario, 2 categorías, 2 mascotas<br>👤 Usuario dueño ID: ' + ownerId, 'success');
+            } catch (error) {
+                console.error('❌ Error poblando base de datos:', error);
+                showStatus('❌ Error poblando base de datos: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📝 Poblar con Datos de Ejemplo';
+            }
+        }
+
+        // Hacer funciones disponibles globalmente
+        window.testConnection = testConnection;
+        window.resetDatabase = resetDatabase;
+        window.populateDatabase = populateDatabase;
+    </script>
+</body>
+</html>

@@ -1,296 +1,554 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { userService, petService, favoriteService } from "../firebase/services.js";
 import { useAuth } from "../firebase/auth.js";
-import { userService } from "../firebase/services.js";
 import "../styles/App.css";
 import "../styles/Profile.css";
 import NavBar from "../components/navbar.jsx";
 
 function Profile({ user }) {
+  const navigate = useNavigate();
   const { logout } = useAuth();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    isShelter: false
-  });
+  const [activeTab, setActiveTab] = useState('my-pets');
+  const [userProfile, setUserProfile] = useState({ name: "", address: "", phone: "", email: "" });
+  const [myPets, setMyPets] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editingPet, setEditingPet] = useState(null);
+  const [formData, setFormData] = useState({ name: "", address: "", phone: "", email: "" });
+  const [petFormData, setPetFormData] = useState({ name: "", breed: "", age: "", gender: "", location: "", description: "" });
 
   useEffect(() => {
-    const loadUserProfile = async () => {
       if (user) {
-        try {
-          console.log("Loading profile for user:", user.uid);
-          const userProfile = await userService.getUserProfile(user.uid);
-          console.log("Profile loaded:", userProfile);
-          if (userProfile) {
-            setFormData({
-              name: userProfile.name || "",
-              email: userProfile.email || user.email || "",
-              phone: userProfile.phone || "",
-              address: userProfile.address || "",
-              isShelter: userProfile.isShelter || false
-            });
+      loadUserData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    try {
+      console.log('Profile: Starting to load user data for user:', user.uid);
+      setLoading(true);
+      
+      // Cargar perfil del usuario
+      console.log('Profile: Loading user profile...');
+      const profile = await userService.getUserProfile(user.uid);
+      if (profile) {
+        console.log('Profile: User profile found:', profile);
+        setUserProfile(profile);
+        setFormData(profile);
           } else {
-            console.log("No profile found, using basic info");
-            setFormData({
-              name: user.displayName || "",
-              email: user.email || "",
+        console.log('Profile: No user profile found, using basic profile');
+        const basicProfile = {
+          name: user.displayName || "Usuario",
+          address: "",
               phone: "",
-              address: "",
-              isShelter: false
-            });
-          }
+          email: user.email || ""
+        };
+        setUserProfile(basicProfile);
+        setFormData(basicProfile);
+      }
+
+      // Cargar mascotas del usuario
+      console.log('Profile: Loading pets for owner:', user.uid);
+      const petsData = await petService.getPetsByOwner(user.uid);
+      console.log('Profile: Pets data received:', petsData);
+      setMyPets(petsData);
+
+      // Cargar favoritos del usuario
+      console.log('Profile: Loading favorites...');
+      const favoritesData = await favoriteService.getFavorites(user.uid);
+      console.log('Profile: Favorites data received:', favoritesData);
+      setFavorites(favoritesData);
+
         } catch (error) {
-          console.error("Error loading user profile:", error);
+      console.error("Profile: Error loading user data:", error);
         } finally {
           setLoading(false);
-        }
       }
     };
 
-    loadUserProfile();
-  }, [user]);
-
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveChanges = async () => {
-    if (!user) return;
-    
-    setSaving(true);
+  const handleSave = async () => {
     try {
-      await userService.updateUserProfile(user.uid, {
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
-        isShelter: formData.isShelter
-      });
-      alert("Perfil guardado correctamente");
+      await userService.updateUserProfile(user.uid, formData);
+      setUserProfile(formData);
+      setEditing(false);
+      alert('Perfil actualizado correctamente');
     } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("No se pudo guardar el perfil");
-    } finally {
-      setSaving(false);
+      console.error('Error updating profile:', error);
+      alert('Error al actualizar el perfil');
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (window.confirm("¿Seguro que deseas eliminar tu cuenta? Se borrarán todos los datos.")) {
+  const handleCancel = () => {
+    setFormData(userProfile);
+    setEditing(false);
+  };
+
+  const handlePetClick = (pet) => {
+    // Si es una mascota propia, abrir modal de edición
+    if (pet.ownerId === user.uid) {
+      setEditingPet(pet);
+      setPetFormData({
+        name: pet.name || "",
+        breed: pet.breed || "",
+        age: pet.age || "",
+        gender: pet.gender || "",
+        location: pet.location || "",
+        description: pet.description || ""
+      });
+    } else {
+      // Si es una mascota de otro usuario, ir a adoptar
+      navigate("/adopt", { state: { pet } });
+    }
+  };
+
+  const toggleFavorite = async (pet, e) => {
+    e.stopPropagation();
+    
+    if (!user?.uid) return;
+
+    try {
+      const isCurrentlyFavorite = favorites.some(fav => fav.petId === pet.id);
+      
+      if (isCurrentlyFavorite) {
+        await favoriteService.removeFavorite(user.uid, pet.id);
+        setFavorites(prev => prev.filter(fav => fav.petId !== pet.id));
+      } else {
+        await favoriteService.addFavorite(user.uid, pet.id);
+        setFavorites(prev => [...prev, { petId: pet.id, userId: user.uid, createdAt: new Date().toISOString() }]);
+      }
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+    }
+  };
+
+  const isFavorite = (pet) => {
+    return favorites.some(fav => fav.petId === pet.id);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      alert('Error al cerrar sesión');
+    }
+  };
+
+  const debugPets = async () => {
+    console.log('=== DEBUG PETS ===');
+    console.log('Current user UID:', user.uid);
+    console.log('Current myPets state:', myPets);
+    
+    // Verificar todas las mascotas en la base de datos
+    try {
+      const allPets = await petService.getPets();
+      console.log('All pets in database:', allPets);
+      
+      const myPetsFromDB = allPets.filter(pet => pet.ownerId === user.uid);
+      console.log('My pets filtered from all pets:', myPetsFromDB);
+    } catch (error) {
+      console.error('Error getting all pets:', error);
+    }
+  };
+
+  const debugNotifications = async () => {
+    console.log('=== DEBUG NOTIFICATIONS ===');
+    console.log('Current user UID:', user.uid);
+    
+    try {
+      const notifications = await notificationService.getNotifications(user.uid);
+      console.log('All notifications for user:', notifications);
+      
+      const adoptionRequests = notifications.filter(n => n.type === 'adoption_request');
+      console.log('Adoption request notifications:', adoptionRequests);
+      
+      // También verificar todas las notificaciones en la base de datos
+      const allNotifications = await notificationService.getAllNotifications();
+      console.log('All notifications in database:', allNotifications);
+      
+    } catch (error) {
+      console.error('Error getting notifications:', error);
+    }
+  };
+
+  const handlePetInputChange = (field, value) => {
+    setPetFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSavePet = async () => {
+    if (!editingPet) return;
+    
+    try {
+      await petService.updatePet(editingPet.id, petFormData);
+      alert('Mascota actualizada correctamente');
+      setEditingPet(null);
+      await loadUserData();
+    } catch (error) {
+      console.error('Error updating pet:', error);
+      alert('Error al actualizar la mascota');
+    }
+  };
+
+  const handleCancelPetEdit = () => {
+    setEditingPet(null);
+    setPetFormData({ name: "", breed: "", age: "", gender: "", location: "", description: "" });
+  };
+
+  const handleDeletePet = async () => {
+    if (!editingPet) return;
+    
+    if (window.confirm(`¿Estás seguro de que quieres eliminar a ${editingPet.name}? Esta acción no se puede deshacer.`)) {
       try {
-        // Aquí podrías implementar la eliminación de la cuenta de Firebase
-        // Por ahora solo cerramos sesión
-        await logout();
-        alert("Cuenta eliminada. Saliendo...");
+        await petService.deletePet(editingPet.id);
+        alert('Mascota eliminada correctamente');
+        setEditingPet(null);
+        await loadUserData();
       } catch (error) {
-        console.error("Error deleting account", error);
-        alert("No se pudo eliminar la cuenta");
+        console.error('Error deleting pet:', error);
+        alert('Error al eliminar la mascota');
       }
     }
-  };
-
-  const currentTheme =
-    typeof document !== "undefined"
-      ? document.body.getAttribute("data-theme") || "dark"
-      : "dark";
-
-  const toggleTheme = () => {
-    const nextTheme =
-      (typeof document !== "undefined"
-        ? document.body.getAttribute("data-theme")
-        : "dark") === "dark"
-        ? "light"
-        : "dark";
-    if (typeof document !== "undefined") {
-      document.body.setAttribute("data-theme", nextTheme);
-    }
-    localStorage.setItem("theme", nextTheme);
   };
 
   if (loading) {
     return (
       <div className="container">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '50vh',
-          fontSize: '18px'
-        }}>
-          Cargando perfil...
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando perfil...</p>
         </div>
         <NavBar />
       </div>
     );
   }
 
-  // Debug: mostrar información del usuario
-  console.log("Profile component - user:", user);
-  console.log("Profile component - formData:", formData);
+  if (!user) {
+    return (
+      <div className="container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h3>Inicia sesión para ver tu perfil</h3>
+          <p>Necesitas iniciar sesión para acceder a tu perfil</p>
+          <button className="browse-button" onClick={() => navigate("/login")}>
+            Iniciar sesión
+          </button>
+        </div>
+        <NavBar />
+      </div>
+    );
+  }
 
   return (
     <div className="container">
-      {/* Header con título */}
       <header className="profile-header">
-        <br />
-        <h1 className="profile-title">Edit Profile</h1>
-        <br />
+        <div className="profile-info">
+          <div className="profile-avatar">
+            <div className="avatar-circle">
+              <span className="avatar-text">
+                {(userProfile.name || "U").charAt(0).toUpperCase()}
+              </span>
+            </div>
+          </div>
+          <div className="profile-details">
+            <h2 className="profile-name">{userProfile.name || "Usuario"}</h2>
+            <p className="profile-email">{userProfile.email || user.email}</p>
+          </div>
+        </div>
+        
+        <button 
+          className="settings-button"
+          onClick={() => setEditing(!editing)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+          </svg>
+        </button>
       </header>
 
       <main className="profile-main">
-        {/* Foto de perfil */}
-        <div className="profile-picture-section">
-          <div className="profile-picture">
-            <img
-              src={
-                localStorage.getItem("userAvatar") ||
-                "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face"
-              }
-              alt="Profile"
-            />
-            <label className="camera-overlay" htmlFor="avatar-input">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="#fff"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path d="M9 4l2-2h2l2 2h3a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h3zm3 3a5 5 0 100 10 5 5 0 000-10z" />
-              </svg>
-              <input
-                id="avatar-input"
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    try {
-                      localStorage.setItem("userAvatar", reader.result);
-                    } catch {}
-                  };
-                  reader.readAsDataURL(file);
-                }}
-              />
-            </label>
-            <div style={{ textAlign: "center", marginTop: 8 }}>
-              <input
-                type="url"
-                placeholder="https://avatar.jpg"
-                className="form-input"
-                onKeyDown={e => {
-                  if (e.key === "Enter") {
-                    try {
-                      localStorage.setItem("userAvatar", e.currentTarget.value);
-                    } catch {}
-                  }
-                }}
-              />
-            </div>
-          </div>
+        {/* Pestañas */}
+        <div className="profile-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'my-pets' ? 'active' : ''}`}
+            onClick={() => setActiveTab('my-pets')}
+          >
+            Tus mascotas
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'favorites' ? 'active' : ''}`}
+            onClick={() => setActiveTab('favorites')}
+          >
+            Favoritas
+          </button>
         </div>
 
-        {/* Campos de formulario */}
-        <div className="form-section">
+        {/* Contenido de las pestañas */}
+        <div className="tab-content">
+          {activeTab === 'my-pets' && (
+            <div className="pets-section">
+              <div className="section-header">
+                <h3>Mis Mascotas ({myPets.length})</h3>
+                <div className="section-actions">
+                  <button 
+                    className="debug-button"
+                    onClick={debugPets}
+                  >
+                    🔍 Debug Pets
+                  </button>
+                  <button 
+                    className="debug-button"
+                    onClick={debugNotifications}
+                  >
+                    🔔 Debug Notifications
+                  </button>
+                  <button 
+                    className="refresh-button"
+                    onClick={loadUserData}
+                    disabled={loading}
+                  >
+                    {loading ? '🔄' : '↻'} Recargar
+                  </button>
+                </div>
+              </div>
+              {myPets.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">🐾</div>
+                  <h3>No tienes mascotas registradas</h3>
+                  <p>Agrega tu primera mascota para comenzar</p>
+                  <button className="browse-button" onClick={() => navigate("/upload")}>
+                    Agregar Mascota
+                  </button>
+                </div>
+              ) : (
+                <div className="pets-grid">
+                  {myPets.map((pet) => (
+                    <div key={pet.id} className="pet-card" onClick={() => handlePetClick(pet)}>
+                      <div className="pet-image-wrapper">
+                        <img src={pet.img} alt={pet.name} className="pet-image" />
+                        <div className="pet-type-badge">{pet.type}</div>
+                      </div>
+                      <div className="pet-content">
+                        <h3 className="pet-name">{pet.name}</h3>
+                        <p className="pet-details">{pet.breed} • {pet.gender}</p>
+                        <div className="pet-meta">
+                          <span className="pet-age">{pet.age}</span>
+                          <span className="pet-location">📍 {pet.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'favorites' && (
+            <div className="favorites-section">
+              {favorites.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">❤️</div>
+                  <h3>No tienes favoritos</h3>
+                  <p>Las mascotas que marques como favoritas aparecerán aquí</p>
+                </div>
+              ) : (
+                <div className="pets-grid">
+                  {favorites.map((fav) => (
+                    <div key={fav.id} className="pet-card" onClick={() => handlePetClick(fav.pet)}>
+                      <div className="pet-image-wrapper">
+                        <img src={fav.pet?.img} alt={fav.pet?.name} className="pet-image" />
+                        <button 
+                          className={`favorite-btn favorited`}
+                          onClick={(e) => toggleFavorite(fav.pet, e)}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+                        </button>
+                        <div className="pet-type-badge">{fav.pet?.type}</div>
+                      </div>
+                      <div className="pet-content">
+                        <h3 className="pet-name">{fav.pet?.name}</h3>
+                        <p className="pet-details">{fav.pet?.breed} • {fav.pet?.gender}</p>
+                        <div className="pet-meta">
+                          <span className="pet-age">{fav.pet?.age}</span>
+                          <span className="pet-location">📍 {fav.pet?.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Modal de configuración */}
+        {editing && (
+          <div className="modal-overlay" onClick={() => setEditing(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Configurar Cuenta</h3>
+                <button className="close-btn" onClick={() => setEditing(false)}>×</button>
+              </div>
+              
+              <div className="modal-body">
           <div className="form-group">
-            <label className="form-label">Name</label>
+                  <label>Nombre completo</label>
             <input
               type="text"
-              className="form-input"
               value={formData.name}
-              onChange={e => handleInputChange("name", e.target.value)}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Tu nombre completo"
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Email</label>
+                  <label>Dirección</label>
             <input
-              type="email"
-              className="form-input"
-              value={formData.email}
-              disabled
-              style={{ opacity: 0.6 }}
-            />
-            <small style={{ color: '#6b7280', fontSize: '0.8rem' }}>
-              El email no se puede cambiar
-            </small>
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Tu dirección"
+                  />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Teléfono</label>
+                  <label>Teléfono</label>
             <input
               type="tel"
-              className="form-input"
               value={formData.phone}
-              onChange={e => handleInputChange("phone", e.target.value)}
-              placeholder="+1 234 567 8900"
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="Tu número de teléfono"
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Dirección</label>
+                  <label>Email</label>
             <input
-              type="text"
-              className="form-input"
-              value={formData.address}
-              onChange={e => handleInputChange("address", e.target.value)}
-              placeholder="Calle, Ciudad, País"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="Tu email"
             />
           </div>
-
-          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input 
-              type="checkbox" 
-              id="isShelter"
-              checked={formData.isShelter} 
-              onChange={(e)=>handleInputChange('isShelter', e.target.checked)}
-            />
-            <label htmlFor="isShelter" className="form-label" style={{ margin: 0 }}>
-              ¿Eres un refugio?
-            </label>
           </div>
 
-          <button 
-            className="save-button" 
-            onClick={handleSaveChanges}
-            disabled={saving}
-            style={{ opacity: saving ? 0.7 : 1 }}
-          >
-            {saving ? 'Guardando...' : 'Guardar cambios'}
+              <div className="modal-actions">
+                <button className="logout-button" onClick={handleLogout}>
+                  Cerrar Sesión
+                </button>
+                <div className="modal-actions-right">
+                  <button className="cancel-button" onClick={handleCancel}>
+                    Cancelar
           </button>
-
-          <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: "0.9rem", color: "#6b7280" }}>Tema</span>
-            <button className="save-button" onClick={toggleTheme}>
-              Cambiar a {currentTheme === "dark" ? "modo claro" : "modo oscuro"}
+                  <button className="save-button" onClick={handleSave}>
+                    Guardar
             </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de edición de mascota */}
+        {editingPet && (
+          <div className="modal-overlay" onClick={handleCancelPetEdit}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Editar Mascota</h3>
+                <button className="close-btn" onClick={handleCancelPetEdit}>×</button>
           </div>
 
-          <button
-            style={{
-              marginTop: 20,
-              backgroundColor: "#ef4444",
-              color: "white",
-              padding: "10px 16px",
-              borderRadius: 6,
-              border: "none",
-              cursor: "pointer",
-              width: "100%"
-            }}
-            onClick={handleDeleteAccount}
-          >
-            Eliminar cuenta
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Nombre</label>
+                  <input
+                    type="text"
+                    value={petFormData.name}
+                    onChange={(e) => handlePetInputChange('name', e.target.value)}
+                    placeholder="Nombre de la mascota"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Raza</label>
+                  <input
+                    type="text"
+                    value={petFormData.breed}
+                    onChange={(e) => handlePetInputChange('breed', e.target.value)}
+                    placeholder="Raza de la mascota"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Edad</label>
+                    <input
+                      type="text"
+                      value={petFormData.age}
+                      onChange={(e) => handlePetInputChange('age', e.target.value)}
+                      placeholder="Edad"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Género</label>
+                    <select
+                      value={petFormData.gender}
+                      onChange={(e) => handlePetInputChange('gender', e.target.value)}
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="Macho">Macho</option>
+                      <option value="Hembra">Hembra</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Ubicación</label>
+                  <input
+                    type="text"
+                    value={petFormData.location}
+                    onChange={(e) => handlePetInputChange('location', e.target.value)}
+                    placeholder="Ubicación"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Descripción</label>
+                  <textarea
+                    value={petFormData.description}
+                    onChange={(e) => handlePetInputChange('description', e.target.value)}
+                    placeholder="Descripción de la mascota"
+                    rows="3"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button className="delete-button" onClick={handleDeletePet}>
+                  Eliminar Mascota
+                </button>
+                <div className="modal-actions-right">
+                  <button className="cancel-button" onClick={handleCancelPetEdit}>
+                    Cancelar
+                  </button>
+                  <button className="save-button" onClick={handleSavePet}>
+                    Guardar
           </button>
         </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <NavBar />

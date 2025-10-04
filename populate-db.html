@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poblar Base de Datos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #0056CC;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Poblar Base de Datos Firebase</h1>
+        <p>Este script poblará tu base de datos Firebase con las categorías necesarias para que la aplicación funcione correctamente.</p>
+        
+        <button onclick="populateCategories()" id="populateBtn">
+            Poblar Categorías
+        </button>
+        
+        <button onclick="testConnection()" id="testBtn">
+            Probar Conexión
+        </button>
+        
+        <div id="status"></div>
+        
+        <div id="instructions" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>Primero haz clic en "Probar Conexión" para verificar que Firebase esté funcionando</li>
+                <li>Luego haz clic en "Poblar Categorías" para crear las categorías necesarias</li>
+                <li>Ve a tu aplicación y verifica que las categorías se carguen correctamente</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZ28tY4uu7Ec0pou2vQl9PlEiqU0IFc4U",
+            authDomain: "animals-adoption-app.firebaseapp.com",
+            projectId: "animals-adoption-app",
+            storageBucket: "animals-adoption-app.firebasestorage.app",
+            messagingSenderId: "360360840693",
+            appId: "1:360360840693:web:f81ab7be2be926eca5a4bc",
+            measurementId: "G-HDDQLXGS7R"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Categorías por defecto
+        const defaultCategories = [
+            {
+                name: "PERRITOS",
+                image: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=center",
+                bgColor: "#1e3a8a",
+                type: "Perro",
+                description: "Encuentra tu mejor amigo canino",
+                petCount: 0
+            },
+            {
+                name: "ERIZOS",
+                image: "https://www3.gobiernodecanarias.org/medusa/wiki/images/0/0c/Erizo-moruno.png",
+                bgColor: "#0d9488",
+                type: "Erizo",
+                description: "Pequeños y adorables erizos",
+                petCount: 0
+            },
+            {
+                name: "CONEJITOS",
+                image: "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=400&h=300&fit=crop&crop=center",
+                bgColor: "#fbbf24",
+                type: "Conejo",
+                description: "Conejos tiernos y juguetones",
+                petCount: 0
+            },
+            {
+                name: "LORITOS",
+                image: "https://i.pinimg.com/736x/e4/27/f4/e427f43daeda0e4cc69cfe265d6885da.jpg",
+                bgColor: "#1e3a8a",
+                type: "Loro",
+                description: "Aves coloridas y parlanchinas",
+                petCount: 0
+            },
+            {
+                name: "HAMSTERS",
+                image: "https://static.vecteezy.com/system/resources/previews/026/748/785/non_2x/cute-little-hamster-png.png",
+                bgColor: "#0d9488",
+                type: "Hamster",
+                description: "Pequeños roedores adorables",
+                petCount: 0
+            },
+            {
+                name: "GATITOS",
+                image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=300&fit=crop&crop=center",
+                bgColor: "#fbbf24",
+                type: "Gato",
+                description: "Gatos independientes y cariñosos",
+                petCount: 0
+            }
+        ];
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.textContent = 'Probando...';
+            
+            try {
+                showStatus('🧪 Probando conexión a Firebase...', 'info');
+                
+                // Intentar crear un documento de prueba
+                const testData = {
+                    message: 'Test de conexión Firebase',
+                    timestamp: new Date().toISOString(),
+                    test: true
+                };
+                
+                const docRef = await addDoc(collection(db, 'test'), testData);
+                console.log('✅ Documento de prueba creado con ID:', docRef.id);
+                
+                // Intentar leer documentos de prueba
+                const querySnapshot = await getDocs(collection(db, 'test'));
+                console.log('✅ Documentos de prueba leídos:', querySnapshot.size);
+                
+                showStatus('🎉 ¡Conexión a Firebase exitosa!', 'success');
+            } catch (error) {
+                console.error('❌ Error de conexión a Firebase:', error);
+                showStatus('❌ Error de conexión a Firebase: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Probar Conexión';
+            }
+        }
+
+        async function populateCategories() {
+            const btn = document.getElementById('populateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Poblando...';
+            
+            try {
+                showStatus('🗄️ Poblando categorías en Firestore...', 'info');
+                
+                let createdCount = 0;
+                for (const category of defaultCategories) {
+                    try {
+                        await addDoc(collection(db, 'categories'), {
+                            ...category,
+                            createdAt: new Date().toISOString()
+                        });
+                        createdCount++;
+                        console.log(`✅ Categoría creada: ${category.name}`);
+                    } catch (error) {
+                        console.error(`❌ Error creando categoría ${category.name}:`, error);
+                    }
+                }
+                
+                if (createdCount > 0) {
+                    showStatus(`✅ ${createdCount} categorías creadas exitosamente!`, 'success');
+                } else {
+                    showStatus('⚠️ No se pudieron crear las categorías', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error poblando categorías:', error);
+                showStatus('❌ Error poblando categorías: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Poblar Categorías';
+            }
+        }
+
+        // Hacer funciones disponibles globalmente
+        window.testConnection = testConnection;
+        window.populateCategories = populateCategories;
+    </script>
+</body>
+</html>

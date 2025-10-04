@@ -14,9 +14,11 @@ import Tracking from "./Tracking.jsx";
 import AdoptionDetails from "./AdoptionDetails.jsx";
 import Chat from "./Chat.jsx";
 import Favorites from "./Favorites.jsx";
+import MyPets from "./MyPets.jsx";
 import Shelters from "./Shelters.jsx";
 import ShelterRegister from "./ShelterRegister.jsx";
 import Notifications from "./Notifications.jsx";
+import AdoptionRequests from "./AdoptionRequests.jsx";
 
 // RUTA PROTEGIDA (definir antes de usar)
 const ProtectedRoute = ({ element, user }) => {
@@ -61,17 +63,19 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<ProtectedRoute element={<Home user={user} />} user={user} />} />
-      <Route path="/categories" element={<ProtectedRoute element={<Categories />} user={user} />} />
+      <Route path="/categories" element={<ProtectedRoute element={<Categories user={user} />} user={user} />} />
       <Route path="/upload" element={<ProtectedRoute element={<Upload user={user} />} user={user} />} />
       <Route path="/profile" element={<ProtectedRoute element={<Profile user={user} />} user={user} />} />
-      <Route path="/adopt" element={<ProtectedRoute element={<Adopt />} user={user} />} />
-      <Route path="/tracking" element={<ProtectedRoute element={<Tracking />} user={user} />} />
-      <Route path="/adoption-details" element={<ProtectedRoute element={<AdoptionDetails />} user={user} />} />
-      <Route path="/chat" element={<ProtectedRoute element={<Chat />} user={user} />} />
-      <Route path="/favorites" element={<ProtectedRoute element={<Favorites />} user={user} />} />
+      <Route path="/adopt" element={<ProtectedRoute element={<Adopt user={user} />} user={user} />} />
+      <Route path="/tracking" element={<ProtectedRoute element={<Tracking user={user} />} user={user} />} />
+      <Route path="/adoption-details" element={<ProtectedRoute element={<AdoptionDetails user={user} />} user={user} />} />
+      <Route path="/chat" element={<ProtectedRoute element={<Chat user={user} />} user={user} />} />
+      <Route path="/favorites" element={<ProtectedRoute element={<Favorites user={user} />} user={user} />} />
+      <Route path="/my-pets" element={<ProtectedRoute element={<MyPets user={user} />} user={user} />} />
       <Route path="/shelters" element={<ProtectedRoute element={<Shelters />} user={user} />} />
       <Route path="/shelter-register" element={<ProtectedRoute element={<ShelterRegister />} user={user} />} />
       <Route path="/notifications" element={<ProtectedRoute element={<Notifications />} user={user} />} />
+      <Route path="/adoption-requests" element={<ProtectedRoute element={<AdoptionRequests user={user} />} user={user} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

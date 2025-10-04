@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { userService, petService } from "../firebase/services.js";
+import { userService, petService, favoriteService } from "../firebase/services.js";
+import { populateCategories } from "../utils/populateFirestore.js";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
 
@@ -11,9 +12,59 @@ function Home({ user }) {
   const [userProfile, setUserProfile] = useState({ name: "", address: "" });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [populating, setPopulating] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   // Si venimos de Categories, obtenemos la categoría seleccionada
   const categoryFilter = location.state?.category || "";
+
+  // Función para poblar la base de datos (solo para desarrollo)
+  const handlePopulateDatabase = async () => {
+    setPopulating(true);
+    try {
+      console.log('Iniciando población de base de datos...');
+      const success = await populateCategories();
+      if (success) {
+        alert('✅ Base de datos poblada exitosamente!');
+        // Recargar la página para ver los cambios
+        window.location.reload();
+      } else {
+        alert('❌ Error al poblar la base de datos');
+      }
+    } catch (error) {
+      console.error('Error populating database:', error);
+      alert('❌ Error al poblar la base de datos: ' + error.message);
+    } finally {
+      setPopulating(false);
+    }
+  };
+
+  // Función para cargar favoritos del usuario
+  const loadFavorites = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      console.log('Loading favorites for user:', user.uid);
+      const favoritesData = await favoriteService.getFavorites(user.uid);
+      
+      // Obtener información completa de cada mascota favorita
+      const enrichedFavorites = await Promise.all(
+        favoritesData.map(async (fav) => {
+          const pet = await petService.getPetById(fav.petId);
+          return {
+            ...fav,
+            pet
+          };
+        })
+      );
+      
+      setFavorites(enrichedFavorites);
+      console.log('Favorites loaded:', enrichedFavorites);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -45,10 +96,13 @@ function Home({ user }) {
             });
           }
 
+          // Cargar favoritos
+          await loadFavorites();
+
           // Cargar mascotas
           const petsData = await petService.getPets();
           if (petsData.length === 0) {
-            // Si no hay mascotas, crear algunas de ejemplo
+            // Si no hay mascotas, crear solo 2 de ejemplo
             const samplePets = [
               {
                 name: "Bobby",
@@ -58,7 +112,9 @@ function Home({ user }) {
                 location: "San José",
                 img: "https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=800&auto=format&fit=crop",
                 type: "Perro",
-                status: "available"
+                status: "available",
+                ownerId: "admin", // ID del dueño de la mascota
+                description: "Bobby es un perro muy cariñoso y juguetón. Le encanta jugar con niños y es muy obediente."
               },
               {
                 name: "Luna",
@@ -68,27 +124,9 @@ function Home({ user }) {
                 location: "Cartago",
                 img: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=800&auto=format&fit=crop",
                 type: "Gato",
-                status: "available"
-              },
-              {
-                name: "Max",
-                breed: "Labrador",
-                gender: "Macho",
-                age: "3 años",
-                location: "Alajuela",
-                img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=800&auto=format&fit=crop",
-                type: "Perro",
-                status: "available"
-              },
-              {
-                name: "Spike",
-                breed: "Erizo Africano",
-                gender: "Macho",
-                age: "1 año",
-                location: "Heredia",
-                img: "https://www.abene.com.mx/cdn/shop/articles/shutterstock_151119362.jpg?v=1620270612",
-                type: "Erizo",
-                status: "available"
+                status: "available",
+                ownerId: "admin", // ID del dueño de la mascota
+                description: "Luna es una gata muy independiente pero cariñosa. Es perfecta para una familia tranquila."
               }
             ];
 
@@ -106,30 +144,38 @@ function Home({ user }) {
           setLoading(false);
         }
       } else {
-        // Si no hay usuario, solo cargar mascotas de ejemplo
-        setPets([
-          {
-            id: 1,
-            name: "Bobby",
-            breed: "Mestizo",
-            gender: "Macho",
-            age: "2 años",
-            location: "San José",
-            img: "https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=800&auto=format&fit=crop",
-            type: "Perro"
-          },
-          {
-            id: 2,
-            name: "Luna",
-            breed: "Siames",
-            gender: "Hembra",
-            age: "1 año",
-            location: "Cartago",
-            img: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=800&auto=format&fit=crop",
-            type: "Gato"
-          }
-        ]);
-        setLoading(false);
+        // Si no hay usuario, cargar mascotas desde Firebase
+        try {
+          const petsData = await petService.getPets();
+          setPets(petsData);
+        } catch (error) {
+          console.error("Error loading pets:", error);
+          // Fallback a mascotas estáticas si hay error
+          setPets([
+            {
+              id: 1,
+              name: "Bobby",
+              breed: "Mestizo",
+              gender: "Macho",
+              age: "2 años",
+              location: "San José",
+              img: "https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=800&auto=format&fit=crop",
+              type: "Perro"
+            },
+            {
+              id: 2,
+              name: "Luna",
+              breed: "Siames",
+              gender: "Hembra",
+              age: "1 año",
+              location: "Cartago",
+              img: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=800&auto=format&fit=crop",
+              type: "Gato"
+            }
+          ]);
+        } finally {
+          setLoading(false);
+        }
       }
     };
 
@@ -138,7 +184,15 @@ function Home({ user }) {
 
   const filteredPets = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return pets.filter((p) => {
+    let filtered = pets;
+
+    // Si está activado el filtro de favoritas, mostrar solo favoritas
+    if (showOnlyFavorites && user?.uid) {
+      const favoritePetIds = favorites.map(fav => fav.petId);
+      filtered = pets.filter(pet => favoritePetIds.includes(pet.id));
+    }
+
+    return filtered.filter((p) => {
       // Filtrar por categoría si viene de Categories
       const matchesCategory = categoryFilter ? p.type.toLowerCase() === categoryFilter.toLowerCase() : true;
 
@@ -149,7 +203,7 @@ function Home({ user }) {
 
       return matchesCategory && matchesSearch;
     });
-  }, [pets, search, categoryFilter]);
+  }, [pets, search, categoryFilter, showOnlyFavorites, favorites, user]);
 
   const handleSearchClick = () => {
     navigate("/categories");
@@ -179,33 +233,36 @@ function Home({ user }) {
     navigate("/notifications");
   };
 
-  const toggleFavorite = (pet, e) => {
+  const toggleFavorite = async (pet, e) => {
     e.stopPropagation();
+    
+    if (!user?.uid) {
+      alert("Debes iniciar sesión para agregar favoritos");
+      return;
+    }
+
     try {
-      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-      const isFavorite = favorites.some(fav => fav.id === pet.id);
+      const isCurrentlyFavorite = favorites.some(fav => fav.petId === pet.id);
       
-      if (isFavorite) {
+      if (isCurrentlyFavorite) {
         // Remover de favoritos
-        const updatedFavorites = favorites.filter(fav => fav.id !== pet.id);
-        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+        await favoriteService.removeFavorite(user.uid, pet.id);
+        setFavorites(prev => prev.filter(fav => fav.petId !== pet.id));
+        console.log('Pet removed from favorites');
       } else {
         // Agregar a favoritos
-        const updatedFavorites = [...favorites, { ...pet, id: pet.id || Date.now() }];
-        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+        await favoriteService.addFavorite(user.uid, pet.id);
+        setFavorites(prev => [...prev, { petId: pet.id, userId: user.uid, createdAt: new Date().toISOString() }]);
+        console.log('Pet added to favorites');
       }
-    } catch (e) {
-      console.error("Error updating favorites", e);
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+      alert("Error al actualizar favoritos. Inténtalo de nuevo.");
     }
   };
 
   const isFavorite = (pet) => {
-    try {
-      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-      return favorites.some(fav => fav.id === pet.id);
-    } catch (e) {
-      return false;
-    }
+    return favorites.some(fav => fav.petId === pet.id);
   };
 
   if (loading) {
@@ -274,6 +331,18 @@ function Home({ user }) {
             </svg>
             <span>Seguimiento</span>
           </button>
+          {/* Botón de debug temporal - solo para desarrollo */}
+          <button 
+            className="quick-action-btn" 
+            onClick={handlePopulateDatabase}
+            disabled={populating}
+            style={{ backgroundColor: '#f59e0b', color: 'white' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>{populating ? 'Poblando...' : 'Poblar DB'}</span>
+          </button>
           <button className="quick-action-btn" onClick={handleChatClick}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -291,8 +360,23 @@ function Home({ user }) {
 
       <main className="main-content">
         <div className="section-header">
-          <h2 className="section-title">Mascotas disponibles</h2>
-          <span className="pets-count">{filteredPets.length} mascotas</span>
+          <h2 className="section-title">
+            {showOnlyFavorites ? 'Tus favoritas' : 'Mascotas disponibles'}
+          </h2>
+          <div className="section-actions">
+            {user?.uid && favorites.length > 0 && (
+              <button 
+                className={`favorites-toggle ${showOnlyFavorites ? 'active' : ''}`}
+                onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                {showOnlyFavorites ? 'Ver todas' : 'Solo favoritas'}
+              </button>
+            )}
+            <span className="pets-count">{filteredPets.length} mascotas</span>
+          </div>
         </div>
 
         <div className="pets-grid">
@@ -322,6 +406,12 @@ function Home({ user }) {
                   <span className="pet-age">{pet.age}</span>
                   <span className="pet-location">📍 {pet.location}</span>
                 </div>
+                {pet.ownerName && (
+                  <div className="pet-owner">
+                    <span className="owner-label">Dueño:</span>
+                    <span className="owner-name">{pet.ownerName}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

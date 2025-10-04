@@ -305,4 +305,28 @@
       width: 100%;
     }
   }
+
+  .existing-request-warning {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .existing-request-warning p {
+    margin: 0.5rem 0;
+    color: #92400e;
+    font-weight: 500;
+  }
+
+  body[data-theme="dark"] .existing-request-warning {
+    background: #451a03;
+    border-color: #f59e0b;
+  }
+
+  body[data-theme="dark"] .existing-request-warning p {
+    color: #fbbf24;
+  }
   

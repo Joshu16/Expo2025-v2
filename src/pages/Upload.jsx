@@ -17,6 +17,11 @@ function Upload({ user }) {
     gender: "",
     age: "",
     type: "", // Tipo de mascota: Perro, Gato, Conejo, etc.
+    description: "",
+    size: "", // Tamaño: Pequeño, Mediano, Grande
+    vaccinated: false,
+    sterilized: false,
+    specialNeeds: ""
   });
   const [userProfile, setUserProfile] = useState({ name: "", address: "" });
   const [loading, setLoading] = useState(false);
@@ -71,31 +76,49 @@ function Upload({ user }) {
   };
 
   const handleSavePet = async () => {
-    if (!previewUrl && !imageUrl) {
-      alert('Selecciona un archivo o pega un enlace de imagen');
+    // Validaciones mejoradas
+    if (!petData.name.trim()) {
+      alert('El nombre de la mascota es obligatorio');
       return;
     }
-    if (!petData.name || !petData.type) {
-      alert('Debes llenar al menos el nombre y el tipo de mascota');
+    if (!petData.type) {
+      alert('Debes seleccionar el tipo de mascota');
+      return;
+    }
+    if (!petData.location.trim()) {
+      alert('La ubicación es obligatoria');
+      return;
+    }
+    if (!selectedFile && !imageUrl.trim()) {
+      alert('Debes subir una imagen o proporcionar un enlace');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Starting pet creation process...');
+      
       const newPet = {
         ...petData,
-        img: previewUrl || imageUrl,
+        img: imageUrl.trim() || '', // Usar URL si está disponible
         status: "available",
         ownerId: user.uid,
-        ownerName: userProfile.name
+        ownerName: userProfile.name || user.displayName || 'Usuario'
       };
 
-      await petService.createPet(newPet);
+      console.log('Pet data prepared:', newPet);
+      console.log('Selected file:', selectedFile ? 'Yes' : 'No');
+      console.log('Image URL:', imageUrl.trim() || 'None');
+
+      // Crear la mascota (el servicio manejará la imagen)
+      const petId = await petService.createPet(newPet, selectedFile);
+      
+      console.log('Pet created successfully with ID:', petId);
       alert('Mascota subida correctamente');
       navigate('/');
     } catch (error) {
       console.error('Error saving pet:', error);
-      alert('Error al subir la mascota');
+      alert('Error al subir la mascota: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -138,9 +161,62 @@ function Upload({ user }) {
             </label>
           </div>
 
-          <div className="upload-separator">o pega un enlace</div>
-          <div className="form-group" style={{ maxWidth: 360, margin: '0 auto' }}>
-            <input type="url" placeholder="https://imagen.jpg" value={imageUrl} onChange={(e)=>handleUrlChange(e.target.value)} />
+          <div className="upload-separator">o pega un enlace de imagen</div>
+          <div className="form-group" style={{ maxWidth: 500, margin: '0 auto' }}>
+            <input 
+              type="url" 
+              placeholder="https://ejemplo.com/imagen.jpg" 
+              value={imageUrl} 
+              onChange={(e)=>handleUrlChange(e.target.value)}
+              style={{ textAlign: 'center' }}
+            />
+            <small style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>
+              💡 Recomendado: Usa enlaces de imágenes de Unsplash, Imgur, o Google Drive
+            </small>
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop')}
+                style={{ 
+                  fontSize: '0.75rem', 
+                  padding: '0.25rem 0.5rem', 
+                  background: '#f3f4f6', 
+                  border: '1px solid #d1d5db', 
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer'
+                }}
+              >
+                🐕 Perro
+              </button>
+              <button 
+                type="button"
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=400&auto=format&fit=crop')}
+                style={{ 
+                  fontSize: '0.75rem', 
+                  padding: '0.25rem 0.5rem', 
+                  background: '#f3f4f6', 
+                  border: '1px solid #d1d5db', 
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer'
+                }}
+              >
+                🐱 Gato
+              </button>
+              <button 
+                type="button"
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=400&auto=format&fit=crop')}
+                style={{ 
+                  fontSize: '0.75rem', 
+                  padding: '0.25rem 0.5rem', 
+                  background: '#f3f4f6', 
+                  border: '1px solid #d1d5db', 
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer'
+                }}
+              >
+                🐰 Conejo
+              </button>
+            </div>
           </div>
         </div>
 
@@ -151,42 +227,132 @@ function Upload({ user }) {
         )}
 
         <div className="upload-form" style={{ marginTop: 16 }}>
-          <div className="form-group">
-            <label>Nombre</label>
-            <input type="text" value={petData.name} onChange={(e) => handleInputChange('name', e.target.value)} />
+          <div className="form-row">
+            <div className="form-group">
+              <label>Nombre *</label>
+              <input 
+                type="text" 
+                value={petData.name} 
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Nombre de la mascota"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Tipo de mascota *</label>
+              <select 
+                value={petData.type} 
+                onChange={(e) => handleInputChange('type', e.target.value)}
+                required
+              >
+                <option value="">Selecciona un tipo</option>
+                <option value="Perro">Perro</option>
+                <option value="Gato">Gato</option>
+                <option value="Conejo">Conejo</option>
+                <option value="Erizo">Erizo</option>
+                <option value="Hamster">Hamster</option>
+                <option value="Loro">Loro</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Ubicación *</label>
+              <input 
+                type="text" 
+                value={petData.location} 
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                placeholder="Ciudad, Estado"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Raza</label>
+              <input 
+                type="text" 
+                value={petData.breed} 
+                onChange={(e) => handleInputChange('breed', e.target.value)}
+                placeholder="Raza o mezcla"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Género</label>
+              <select value={petData.gender} onChange={(e) => handleInputChange('gender', e.target.value)}>
+                <option value="">Selecciona</option>
+                <option value="Macho">Macho</option>
+                <option value="Hembra">Hembra</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Edad</label>
+              <input 
+                type="text" 
+                value={petData.age} 
+                onChange={(e) => handleInputChange('age', e.target.value)}
+                placeholder="Ej: 2 años, 6 meses"
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label>Ubicación</label>
-            <input type="text" value={petData.location} onChange={(e) => handleInputChange('location', e.target.value)} />
-          </div>
-
-          <div className="form-group">
-            <label>Raza</label>
-            <input type="text" value={petData.breed} onChange={(e) => handleInputChange('breed', e.target.value)} />
-          </div>
-
-          <div className="form-group">
-            <label>Género</label>
-            <input type="text" value={petData.gender} onChange={(e) => handleInputChange('gender', e.target.value)} />
-          </div>
-
-          <div className="form-group">
-            <label>Edad</label>
-            <input type="text" value={petData.age} onChange={(e) => handleInputChange('age', e.target.value)} />
-          </div>
-
-          <div className="form-group">
-            <label>Tipo de mascota</label>
-            <select value={petData.type} onChange={(e) => handleInputChange('type', e.target.value)}>
-              <option value="">Selecciona un tipo</option>
-              <option value="Perro">Perro</option>
-              <option value="Gato">Gato</option>
-              <option value="Conejo">Conejo</option>
-              <option value="Erizo">Erizo</option>
-              <option value="Hamster">Hamster</option>
-              <option value="Loro">Loro</option>
+            <label>Tamaño</label>
+            <select value={petData.size} onChange={(e) => handleInputChange('size', e.target.value)}>
+              <option value="">Selecciona</option>
+              <option value="Pequeño">Pequeño</option>
+              <option value="Mediano">Mediano</option>
+              <option value="Grande">Grande</option>
             </select>
+          </div>
+
+          <div className="form-group">
+            <label>Descripción</label>
+            <textarea 
+              value={petData.description} 
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Cuéntanos sobre la personalidad, comportamiento y características especiales de la mascota..."
+              rows="3"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Necesidades especiales</label>
+            <textarea 
+              value={petData.specialNeeds} 
+              onChange={(e) => handleInputChange('specialNeeds', e.target.value)}
+              placeholder="Menciona si tiene alguna condición especial, medicamentos, cuidados especiales, etc."
+              rows="2"
+            />
+          </div>
+
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input 
+                type="checkbox" 
+                checked={petData.vaccinated} 
+                onChange={(e) => handleInputChange('vaccinated', e.target.checked)}
+              />
+              <span>Está vacunado</span>
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input 
+                type="checkbox" 
+                checked={petData.sterilized} 
+                onChange={(e) => handleInputChange('sterilized', e.target.checked)}
+              />
+              <span>Está esterilizado/castrado</span>
+            </label>
           </div>
 
           <button 

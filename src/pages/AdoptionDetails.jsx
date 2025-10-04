@@ -1,30 +1,93 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../styles/App.css";
 import "../styles/AdoptionDetails.css";
 import NavBar from "../components/navbar.jsx";
+import { adoptionRequestService, chatService } from "../firebase/services.js";
 
-function AdoptionDetails() {
+function AdoptionDetails({ user }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { adoption } = location.state || {};
+  const { requestId } = useParams();
+  const adoptionFromState = location.state?.adoption;
+  
+  const [adoption, setAdoption] = useState(adoptionFromState);
+  const [loading, setLoading] = useState(!adoptionFromState);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [conversationId, setConversationId] = useState(null);
 
   useEffect(() => {
-    if (!adoption) {
+    if (adoptionFromState) {
+      // Si la adopción viene del estado, usarla directamente
+      setAdoption(adoptionFromState);
+      setLoading(false);
+      loadMessages(adoptionFromState.id);
+    } else if (requestId) {
+      // Si solo tenemos el ID, cargar la adopción desde Firebase
+      loadAdoptionFromFirebase(requestId);
+    } else {
+      // Si no hay adopción ni ID, redirigir al tracking
       navigate("/tracking");
       return;
     }
+  }, [adoptionFromState, requestId, navigate, user]);
 
-    // Cargar mensajes de la adopción
+  const loadAdoptionFromFirebase = async (requestId) => {
     try {
-      const storedMessages = JSON.parse(localStorage.getItem(`messages_${adoption.id}`) || "[]");
-      setMessages(storedMessages);
-    } catch (e) {
-      console.error("Error loading messages", e);
+      console.log('Loading adoption request from Firebase with ID:', requestId);
+      setLoading(true);
+      const adoptionData = await adoptionRequestService.getAdoptionRequestById(requestId);
+      
+      if (adoptionData) {
+        console.log('Adoption request loaded from Firebase:', adoptionData);
+        setAdoption(adoptionData);
+        loadMessages(adoptionData.id);
+      } else {
+        console.log('Adoption request not found in Firebase');
+        navigate("/tracking");
+      }
+    } catch (error) {
+      console.error('Error loading adoption request from Firebase:', error);
+      navigate("/tracking");
+    } finally {
+      setLoading(false);
     }
-  }, [adoption, navigate]);
+  };
+
+  const loadMessages = async (adoptionId) => {
+    try {
+      // Buscar conversación existente para esta adopción
+      const conversations = await chatService.getConversations(user?.uid);
+      const existingConversation = conversations.find(conv => 
+        conv.petId === adoption.petId || conv.adoptionRequestId === adoptionId
+      );
+
+      if (existingConversation) {
+        setConversationId(existingConversation.id);
+        const messagesData = await chatService.getMessages(existingConversation.id);
+        setMessages(messagesData);
+      } else {
+        // Crear nueva conversación si no existe
+        const newConversationId = await chatService.createConversation(
+          [user.uid, adoption.pet.ownerId || 'admin'], // Asumiendo que hay un ownerId en pet
+          adoption.petId,
+          adoptionId
+        );
+        setConversationId(newConversationId);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      // Fallback a localStorage si hay error
+      try {
+        const storedMessages = JSON.parse(localStorage.getItem(`messages_${adoptionId}`) || "[]");
+        setMessages(storedMessages);
+      } catch (e) {
+        console.error("Error loading messages from localStorage:", e);
+      }
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -46,49 +109,112 @@ function AdoptionDetails() {
     }
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !conversationId) return;
 
-    const message = {
-      id: Date.now(),
-      content: newMessage,
-      sender: "user",
-      timestamp: new Date().toISOString(),
-    };
-
-    const updatedMessages = [...messages, message];
-    setMessages(updatedMessages);
-    setNewMessage("");
-
-    // Guardar en localStorage
     try {
-      localStorage.setItem(`messages_${adoption.id}`, JSON.stringify(updatedMessages));
-    } catch (e) {
-      console.error("Error saving message", e);
+      const messageData = {
+        content: newMessage,
+        senderId: user.uid,
+        senderName: user.displayName || 'Usuario',
+        type: 'text'
+      };
+
+      await chatService.sendMessage(conversationId, messageData);
+      setNewMessage("");
+      
+      // Recargar mensajes para mostrar el nuevo
+      const updatedMessages = await chatService.getMessages(conversationId);
+      setMessages(updatedMessages);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Fallback a localStorage si hay error
+      const message = {
+        id: Date.now(),
+        content: newMessage,
+        sender: "user",
+        timestamp: new Date().toISOString(),
+      };
+
+      const updatedMessages = [...messages, message];
+      setMessages(updatedMessages);
+      setNewMessage("");
+
+      try {
+        localStorage.setItem(`messages_${adoption.id}`, JSON.stringify(updatedMessages));
+      } catch (e) {
+        console.error("Error saving message to localStorage", e);
+      }
     }
   };
 
-  const handleStatusChange = (newStatus) => {
+  const handleStatusChange = async (newStatus) => {
+    // Verificar si el usuario es el dueño de la mascota
+    if (adoption.pet.ownerId !== user?.uid) {
+      alert("Solo el dueño de la mascota puede aprobar o rechazar solicitudes de adopción");
+      return;
+    }
+
     if (window.confirm(`¿Cambiar estado a ${newStatus}?`)) {
       try {
-        const adoptions = JSON.parse(localStorage.getItem("adoptions") || "[]");
-        const updatedAdoptions = adoptions.map(ad => 
-          ad.id === adoption.id ? { ...ad, status: newStatus } : ad
-        );
-        localStorage.setItem("adoptions", JSON.stringify(updatedAdoptions));
+        await adoptionRequestService.updateAdoptionRequestStatus(adoption.id, newStatus);
         
         // Actualizar la adopción local
-        adoption.status = newStatus;
+        setAdoption(prev => ({ ...prev, status: newStatus }));
         alert("Estado actualizado correctamente");
-      } catch (e) {
-        console.error("Error updating status", e);
+      } catch (error) {
+        console.error("Error updating status:", error);
         alert("Error al actualizar el estado");
       }
     }
   };
 
-  if (!adoption) return null;
+  if (loading) {
+    return (
+      <div className="container">
+        <header>
+          <button className="back-button" onClick={() => navigate("/tracking")}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver
+          </button>
+          <h2 className="logo-text">Detalles de Adopción</h2>
+        </header>
+        <main>
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Cargando detalles de adopción...</p>
+          </div>
+        </main>
+        <NavBar />
+      </div>
+    );
+  }
+
+  if (!adoption) {
+    return (
+      <div className="container">
+        <header>
+          <button className="back-button" onClick={() => navigate("/tracking")}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver
+          </button>
+          <h2 className="logo-text">Detalles de Adopción</h2>
+        </header>
+        <main>
+          <div className="error-message">
+            <p>No se encontró la solicitud de adopción.</p>
+            <button onClick={() => navigate("/tracking")}>Volver al seguimiento</button>
+          </div>
+        </main>
+        <NavBar />
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -131,7 +257,7 @@ function AdoptionDetails() {
             </span>
           </div>
           
-          {adoption.status === "pending" && (
+          {adoption.status === "pending" && adoption.pet.ownerId === user?.uid && (
             <div className="status-actions">
               <button 
                 className="action-button approve"
@@ -148,7 +274,7 @@ function AdoptionDetails() {
             </div>
           )}
 
-          {adoption.status === "approved" && (
+          {adoption.status === "approved" && adoption.pet.ownerId === user?.uid && (
             <div className="status-actions">
               <button 
                 className="action-button complete"
@@ -156,6 +282,12 @@ function AdoptionDetails() {
               >
                 Marcar como Completada
               </button>
+            </div>
+          )}
+
+          {adoption.pet.ownerId !== user?.uid && (
+            <div className="status-info">
+              <p>Esta solicitud está siendo revisada por el dueño de la mascota.</p>
             </div>
           )}
         </div>

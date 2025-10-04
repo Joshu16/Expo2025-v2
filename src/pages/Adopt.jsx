@@ -1,101 +1,244 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../styles/adopt.css";
 import NavBar from "../components/navbar.jsx";
+import { petService, favoriteService, adoptionRequestService, notificationService } from "../firebase/services.js";
 
-function Adopt() {
+function Adopt({ user }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const pet = location.state?.pet;
+  const { petId } = useParams();
+  const petFromState = location.state?.pet;
+  
+  const [pet, setPet] = useState(petFromState);
+  const [loading, setLoading] = useState(!petFromState);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
+    name: user?.displayName || "",
+    email: user?.email || "",
+    message: ""
   });
   const [completed, setCompleted] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [hasExistingRequest, setHasExistingRequest] = useState(false);
 
   useEffect(() => {
-    if (!pet) {
+    if (petFromState) {
+      // Si la mascota viene del estado, usarla directamente
+      setPet(petFromState);
+      setLoading(false);
+      checkFavoriteStatus(petFromState.id);
+      checkExistingRequest(petFromState.id);
+      
+      // Verificar si es la propia mascota del usuario
+      if (user?.uid && petFromState.ownerId === user.uid) {
+        navigate('/profile');
+        return;
+      }
+    } else if (petId) {
+      // Si solo tenemos el ID, cargar la mascota desde Firebase
+      loadPetFromFirebase(petId);
+    } else {
+      // Si no hay mascota ni ID, redirigir al inicio
       navigate("/");
       return;
     }
+  }, [petFromState, petId, navigate, user]);
 
-    // Verificar si la mascota está en favoritos
+  const loadPetFromFirebase = async (petId) => {
     try {
-      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-      setIsFavorite(favorites.some(fav => fav.id === pet.id));
-    } catch (e) {
-      console.error("Error checking favorites", e);
+      console.log('Loading pet from Firebase with ID:', petId);
+      setLoading(true);
+      const petData = await petService.getPetById(petId);
+      
+      if (petData) {
+        console.log('Pet loaded from Firebase:', petData);
+        
+        // Verificar si es la propia mascota del usuario
+        if (user?.uid && petData.ownerId === user.uid) {
+          navigate('/profile');
+          return;
+        }
+        
+        setPet(petData);
+        checkFavoriteStatus(petData.id);
+        checkExistingRequest(petData.id);
+      } else {
+        console.log('Pet not found in Firebase');
+        navigate("/");
+      }
+    } catch (error) {
+      console.error('Error loading pet from Firebase:', error);
+      navigate("/");
+    } finally {
+      setLoading(false);
     }
-  }, [pet, navigate]);
+  };
+
+  const checkFavoriteStatus = async (petId) => {
+    if (!user?.uid) return;
+    
+    try {
+      const favoriteStatus = await favoriteService.isFavorite(user.uid, petId);
+      setIsFavorite(favoriteStatus);
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+    }
+  };
+
+  const checkExistingRequest = async (petId) => {
+    if (!user?.uid) return;
+    
+    try {
+      const requests = await adoptionRequestService.getAdoptionRequests(user.uid);
+      const existingRequest = requests.find(req => 
+        req.petId === petId && 
+        (req.status === 'pending' || req.status === 'approved')
+      );
+      setHasExistingRequest(!!existingRequest);
+    } catch (error) {
+      console.error('Error checking existing request:', error);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
+    if (!user?.uid) {
+      alert("Debes iniciar sesión para agregar favoritos");
+      return;
+    }
+
     try {
-      const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-      
       if (isFavorite) {
         // Remover de favoritos
-        const updatedFavorites = favorites.filter(fav => fav.id !== pet.id);
-        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+        await favoriteService.removeFavorite(user.uid, pet.id);
         setIsFavorite(false);
+        console.log('Pet removed from favorites');
       } else {
         // Agregar a favoritos
-        const updatedFavorites = [...favorites, { ...pet, id: pet.id || Date.now() }];
-        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+        await favoriteService.addFavorite(user.uid, pet.id);
         setIsFavorite(true);
+        console.log('Pet added to favorites');
       }
-    } catch (e) {
-      console.error("Error updating favorites", e);
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+      alert("Error al actualizar favoritos. Inténtalo de nuevo.");
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Crear registro de adopción
-    const adoption = {
-      id: Date.now(),
-      pet: pet,
-      adopterName: formData.name,
-      adopterEmail: formData.email,
-      adopterPhone: formData.phone,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
+    if (!user?.uid) {
+      alert("Debes iniciar sesión para solicitar adopción");
+      return;
+    }
 
     try {
-      // Guardar adopción
-      const adoptions = JSON.parse(localStorage.getItem("adoptions") || "[]");
-      const updatedAdoptions = [adoption, ...adoptions];
-      localStorage.setItem("adoptions", JSON.stringify(updatedAdoptions));
+      setSubmitting(true);
+      console.log('=== STARTING ADOPTION REQUEST ===');
+      console.log('Pet data:', pet);
+      console.log('Form data:', formData);
+      console.log('User data:', user);
+      console.log('Pet ownerId:', pet.ownerId);
+      
+      // Crear solicitud de adopción en Firebase
+      const adoptionData = {
+        userId: user.uid,
+        petId: pet.id,
+        ownerId: pet.ownerId, // Agregar el ID del dueño de la mascota
+        pet: pet, // Guardar también los datos de la mascota para referencia
+        adopterName: formData.name,
+        adopterEmail: formData.email,
+        message: formData.message || ''
+      };
 
-      // Crear notificación
-      const notification = {
-        id: Date.now(),
+      console.log('Creating adoption request with data:', adoptionData);
+      const adoptionRequestId = await adoptionRequestService.createAdoptionRequest(adoptionData);
+      console.log('✅ Adoption request created with ID:', adoptionRequestId);
+
+      // Crear notificación para el solicitante
+      await notificationService.createNotification({
+        userId: user.uid,
         type: "adoption",
         title: "Solicitud de adopción enviada",
         message: `Tu solicitud para adoptar a ${pet.name} ha sido enviada y está siendo revisada.`,
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
+        adoptionRequestId: adoptionRequestId
+      });
 
-      const notifications = JSON.parse(localStorage.getItem("notifications") || "[]");
-      const updatedNotifications = [notification, ...notifications];
-      localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
+      // Crear notificación para el dueño de la mascota
+      if (pet.ownerId) {
+        console.log('=== CREATING NOTIFICATION FOR OWNER ===');
+        console.log('Pet owner ID:', pet.ownerId);
+        console.log('Adopter ID:', user.uid);
+        console.log('Pet name:', pet.name);
+        console.log('Adopter name:', formData.name);
+        
+        try {
+          const notificationId = await notificationService.createNotification({
+            userId: pet.ownerId,
+            type: "adoption_request",
+            title: "Nueva solicitud de adopción",
+            message: `${formData.name} quiere adoptar a ${pet.name}. Revisa la solicitud en tu perfil.`,
+            adoptionRequestId: adoptionRequestId,
+            petId: pet.id,
+            adopterId: user.uid
+          });
+          console.log('✅ Notification created successfully for pet owner:', pet.ownerId);
+          console.log('Notification ID:', notificationId);
+        } catch (notificationError) {
+          console.error('❌ Error creating notification for owner:', notificationError);
+        }
+      } else {
+        console.log('❌ No ownerId found for pet:', pet);
+      }
 
+      console.log('Notifications created successfully');
       setCompleted(true);
-    } catch (e) {
-      console.error("Error saving adoption", e);
+    } catch (error) {
+      console.error("Error creating adoption request:", error);
       alert("Error al procesar la solicitud. Inténtalo de nuevo.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (!pet) return <div className="container"><p>No se encontró la mascota.</p><NavBar /></div>;
+  if (loading) {
+    return (
+      <div className="container">
+        <header>
+          <h2 className="logo-text">Adoptar</h2>
+        </header>
+        <main>
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Cargando mascota...</p>
+          </div>
+        </main>
+        <NavBar />
+      </div>
+    );
+  }
+
+  if (!pet) {
+    return (
+      <div className="container">
+        <header>
+          <h2 className="logo-text">Adoptar</h2>
+        </header>
+        <main>
+          <div className="error-message">
+            <p>No se encontró la mascota.</p>
+            <button onClick={() => navigate("/")}>Volver al inicio</button>
+          </div>
+        </main>
+        <NavBar />
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -112,6 +255,7 @@ function Adopt() {
                 className={`favorite-button ${isFavorite ? 'active' : ''}`}
                 onClick={toggleFavorite}
                 title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                disabled={!user?.uid}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -127,7 +271,24 @@ function Adopt() {
           </div>
 
           {!completed ? (
-            <form className="adopt-form" onSubmit={handleSubmit}>
+            <>
+              {hasExistingRequest && (
+                <div className="existing-request-warning">
+                  <p>⚠️ Ya tienes una solicitud pendiente para adoptar a {pet.name}</p>
+                  <p>Puedes revisar el estado de tu solicitud en tu perfil.</p>
+                </div>
+              )}
+              
+              <form className="adopt-form" onSubmit={handleSubmit}>
+                {!user?.uid && (
+                  <div className="login-required">
+                    <p>Debes iniciar sesión para solicitar adopción</p>
+                    <button type="button" onClick={() => navigate("/login")}>
+                      Iniciar sesión
+                    </button>
+                  </div>
+                )}
+              
               <label>Nombre</label>
               <input
                 name="name"
@@ -135,6 +296,7 @@ function Adopt() {
                 onChange={handleChange}
                 placeholder="Tu nombre"
                 required
+                disabled={!user?.uid}
               />
               <label>Email</label>
               <input
@@ -144,17 +306,25 @@ function Adopt() {
                 onChange={handleChange}
                 placeholder="Tu email"
                 required
+                disabled={!user?.uid}
               />
-              <label>Teléfono</label>
-              <input
-                name="phone"
-                value={formData.phone}
+              <label>Mensaje (opcional)</label>
+              <textarea
+                name="message"
+                value={formData.message}
                 onChange={handleChange}
-                placeholder="Tu teléfono"
-                required
+                placeholder="Cuéntanos por qué quieres adoptar esta mascota..."
+                rows="3"
+                disabled={!user?.uid}
               />
-              <button type="submit">Adoptar</button>
+              <button 
+                type="submit" 
+                disabled={!user?.uid || submitting || hasExistingRequest}
+              >
+                {submitting ? 'Enviando...' : hasExistingRequest ? 'Solicitud ya enviada' : 'Adoptar'}
+              </button>
             </form>
+            </>
           ) : (
             <div className="adoption-completed">
               <div className="success-icon">✅</div>
