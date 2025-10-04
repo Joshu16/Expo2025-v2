@@ -1,27 +1,57 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../firebase/auth.js";
+import { userService } from "../firebase/services.js";
 import "../styles/App.css";
 import "../styles/Profile.css";
 import NavBar from "../components/navbar.jsx";
 
-function Profile() {
+function Profile({ user }) {
+  const { logout } = useAuth();
   const [formData, setFormData] = useState({
-    name: "Melissa Peters",
-    email: "melpeters@gmail.com",
-    password: "************",
-    country: "Nigeria"
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    isShelter: false
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("userProfile");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setFormData(prev => ({ ...prev, ...parsed }));
+    const loadUserProfile = async () => {
+      if (user) {
+        try {
+          console.log("Loading profile for user:", user.uid);
+          const userProfile = await userService.getUserProfile(user.uid);
+          console.log("Profile loaded:", userProfile);
+          if (userProfile) {
+            setFormData({
+              name: userProfile.name || "",
+              email: userProfile.email || user.email || "",
+              phone: userProfile.phone || "",
+              address: userProfile.address || "",
+              isShelter: userProfile.isShelter || false
+            });
+          } else {
+            console.log("No profile found, using basic info");
+            setFormData({
+              name: user.displayName || "",
+              email: user.email || "",
+              phone: "",
+              address: "",
+              isShelter: false
+            });
+          }
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+        } finally {
+          setLoading(false);
+        }
       }
-    } catch (e) {
-      console.error("Error reading userProfile from localStorage", e);
-    }
-  }, []);
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -30,25 +60,35 @@ function Profile() {
     }));
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
+    if (!user) return;
+    
+    setSaving(true);
     try {
-      localStorage.setItem("userProfile", JSON.stringify(formData));
-      alert("Perfil guardado");
-    } catch (e) {
-      console.error("Error saving userProfile to localStorage", e);
+      await userService.updateUserProfile(user.uid, {
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        isShelter: formData.isShelter
+      });
+      alert("Perfil guardado correctamente");
+    } catch (error) {
+      console.error("Error saving profile:", error);
       alert("No se pudo guardar el perfil");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeleteAccount = () => {
-    if (window.confirm("¿Seguro que deseas eliminar tu cuenta? Se borrarán todos los datos locales.")) {
+  const handleDeleteAccount = async () => {
+    if (window.confirm("¿Seguro que deseas eliminar tu cuenta? Se borrarán todos los datos.")) {
       try {
-        localStorage.clear(); // Limpia todo
+        // Aquí podrías implementar la eliminación de la cuenta de Firebase
+        // Por ahora solo cerramos sesión
+        await logout();
         alert("Cuenta eliminada. Saliendo...");
-        // Si usas rutas, puedes redirigir aquí:
-        // window.location.href = "/login";
-      } catch (e) {
-        console.error("Error deleting account", e);
+      } catch (error) {
+        console.error("Error deleting account", error);
         alert("No se pudo eliminar la cuenta");
       }
     }
@@ -71,6 +111,27 @@ function Profile() {
     }
     localStorage.setItem("theme", nextTheme);
   };
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '50vh',
+          fontSize: '18px'
+        }}>
+          Cargando perfil...
+        </div>
+        <NavBar />
+      </div>
+    );
+  }
+
+  // Debug: mostrar información del usuario
+  console.log("Profile component - user:", user);
+  console.log("Profile component - formData:", formData);
 
   return (
     <div className="container">
@@ -156,36 +217,55 @@ function Profile() {
               type="email"
               className="form-input"
               value={formData.email}
-              onChange={e => handleInputChange("email", e.target.value)}
+              disabled
+              style={{ opacity: 0.6 }}
             />
+            <small style={{ color: '#6b7280', fontSize: '0.8rem' }}>
+              El email no se puede cambiar
+            </small>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label">Teléfono</label>
             <input
-              type="password"
+              type="tel"
               className="form-input"
-              value={formData.password}
-              onChange={e => handleInputChange("password", e.target.value)}
+              value={formData.phone}
+              onChange={e => handleInputChange("phone", e.target.value)}
+              placeholder="+1 234 567 8900"
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Country/Region</label>
-            <div className="select-wrapper">
-              <input
-                type="text"
-                className="form-input"
-                value={formData.country}
-                onChange={e => handleInputChange("country", e.target.value)}
-                readOnly
-              />
-              <span className="dropdown-icon">⌄</span>
-            </div>
+            <label className="form-label">Dirección</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.address}
+              onChange={e => handleInputChange("address", e.target.value)}
+              placeholder="Calle, Ciudad, País"
+            />
           </div>
 
-          <button className="save-button" onClick={handleSaveChanges}>
-            Save changes
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input 
+              type="checkbox" 
+              id="isShelter"
+              checked={formData.isShelter} 
+              onChange={(e)=>handleInputChange('isShelter', e.target.checked)}
+            />
+            <label htmlFor="isShelter" className="form-label" style={{ margin: 0 }}>
+              ¿Eres un refugio?
+            </label>
+          </div>
+
+          <button 
+            className="save-button" 
+            onClick={handleSaveChanges}
+            disabled={saving}
+            style={{ opacity: saving ? 0.7 : 1 }}
+          >
+            {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
 
           <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>

@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { userService, petService } from "../firebase/services.js";
 import "../styles/App.css";
 import "../styles/Upload.css";
 import NavBar from "../components/navbar.jsx";
 
-function Upload() {
+function Upload({ user }) {
+  const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -16,7 +18,34 @@ function Upload() {
     age: "",
     type: "", // Tipo de mascota: Perro, Gato, Conejo, etc.
   });
-  const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState({ name: "", address: "" });
+  const [loading, setLoading] = useState(false);
+
+  // Cargar perfil del usuario para auto-completar
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        try {
+          const profile = await userService.getUserProfile(user.uid);
+          if (profile) {
+            setUserProfile({
+              name: profile.name || "",
+              address: profile.address || ""
+            });
+            // Auto-completar la ubicación con la dirección del usuario
+            setPetData(prev => ({
+              ...prev,
+              location: profile.address || ""
+            }));
+          }
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -41,7 +70,7 @@ function Upload() {
     setPetData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSavePet = () => {
+  const handleSavePet = async () => {
     if (!previewUrl && !imageUrl) {
       alert('Selecciona un archivo o pega un enlace de imagen');
       return;
@@ -51,20 +80,24 @@ function Upload() {
       return;
     }
 
-    const newPet = {
-      ...petData,
-      img: previewUrl || imageUrl,
-    };
-
+    setLoading(true);
     try {
-      const existing = JSON.parse(localStorage.getItem('pets') || '[]');
-      const updated = [newPet, ...existing];
-      localStorage.setItem('pets', JSON.stringify(updated));
-      alert('Mascota guardada correctamente');
+      const newPet = {
+        ...petData,
+        img: previewUrl || imageUrl,
+        status: "available",
+        ownerId: user.uid,
+        ownerName: userProfile.name
+      };
+
+      await petService.createPet(newPet);
+      alert('Mascota subida correctamente');
       navigate('/');
-    } catch (e) {
-      console.error('Error saving pet to localStorage', e);
-      alert('No se pudo guardar la mascota');
+    } catch (error) {
+      console.error('Error saving pet:', error);
+      alert('Error al subir la mascota');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,8 +189,13 @@ function Upload() {
             </select>
           </div>
 
-          <button className="save-button" style={{ marginTop: 12 }} onClick={handleSavePet}>
-            Guardar mascota
+          <button 
+            className="save-button" 
+            style={{ marginTop: 12, opacity: loading ? 0.7 : 1 }} 
+            onClick={handleSavePet}
+            disabled={loading}
+          >
+            {loading ? 'Guardando...' : 'Guardar mascota'}
           </button>
         </div>
       </main>

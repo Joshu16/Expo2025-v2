@@ -1,27 +1,113 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { userService, petService } from "../firebase/services.js";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
-import { initializeSampleData } from "../utils/sampleData.js";
 
-function Home() {
+function Home({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [pets, setPets] = useState([]);
-  const [user, setUser] = useState({ name: "", country: "" });
+  const [userProfile, setUserProfile] = useState({ name: "", address: "" });
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // Si venimos de Categories, obtenemos la categoría seleccionada
   const categoryFilter = location.state?.category || "";
 
   useEffect(() => {
-    // Inicializar datos de ejemplo
-    initializeSampleData();
-    
-    try {
-      let stored = JSON.parse(localStorage.getItem("pets") || "[]");
-      if (!stored || stored.length === 0) {
-        stored = [
+    const loadData = async () => {
+      console.log("Home useEffect - user:", user);
+      console.log("Home useEffect - loading:", loading);
+      
+      if (user) {
+        try {
+          // Test básico de Firebase
+          console.log("Testing Firebase connection...");
+          console.log("User UID:", user.uid);
+          console.log("User displayName:", user.displayName);
+          console.log("User email:", user.email);
+          
+          // Cargar perfil del usuario
+          console.log("Loading profile for user:", user.uid);
+          const profile = await userService.getUserProfile(user.uid);
+          console.log("Profile loaded:", profile);
+          if (profile) {
+            setUserProfile({
+              name: profile.name || "",
+              address: profile.address || ""
+            });
+          } else {
+            console.log("No profile found, using display name:", user.displayName);
+            setUserProfile({
+              name: user.displayName || "",
+              address: ""
+            });
+          }
+
+          // Cargar mascotas
+          const petsData = await petService.getPets();
+          if (petsData.length === 0) {
+            // Si no hay mascotas, crear algunas de ejemplo
+            const samplePets = [
+              {
+                name: "Bobby",
+                breed: "Mestizo",
+                gender: "Macho",
+                age: "2 años",
+                location: "San José",
+                img: "https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=800&auto=format&fit=crop",
+                type: "Perro",
+                status: "available"
+              },
+              {
+                name: "Luna",
+                breed: "Siames",
+                gender: "Hembra",
+                age: "1 año",
+                location: "Cartago",
+                img: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=800&auto=format&fit=crop",
+                type: "Gato",
+                status: "available"
+              },
+              {
+                name: "Max",
+                breed: "Labrador",
+                gender: "Macho",
+                age: "3 años",
+                location: "Alajuela",
+                img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=800&auto=format&fit=crop",
+                type: "Perro",
+                status: "available"
+              },
+              {
+                name: "Spike",
+                breed: "Erizo Africano",
+                gender: "Macho",
+                age: "1 año",
+                location: "Heredia",
+                img: "https://www.abene.com.mx/cdn/shop/articles/shutterstock_151119362.jpg?v=1620270612",
+                type: "Erizo",
+                status: "available"
+              }
+            ];
+
+            // Crear mascotas de ejemplo en Firebase
+            for (const pet of samplePets) {
+              await petService.createPet(pet);
+            }
+            setPets(samplePets);
+          } else {
+            setPets(petsData);
+          }
+        } catch (error) {
+          console.error("Error loading data:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Si no hay usuario, solo cargar mascotas de ejemplo
+        setPets([
           {
             id: 1,
             name: "Bobby",
@@ -41,44 +127,14 @@ function Home() {
             location: "Cartago",
             img: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=800&auto=format&fit=crop",
             type: "Gato"
-          },
-          {
-            id: 3,
-            name: "Max",
-            breed: "Labrador",
-            gender: "Macho",
-            age: "3 años",
-            location: "Alajuela",
-            img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=800&auto=format&fit=crop",
-            type: "Perro"
-          },
-          {
-            id: 4,
-            name: "Spike",
-            breed: "Erizo Africano",
-            gender: "Macho",
-            age: "1 año",
-            location: "Heredia",
-            img: "https://www.abene.com.mx/cdn/shop/articles/shutterstock_151119362.jpg?v=1620270612",
-            type: "Erizo"
           }
-        ];
-        localStorage.setItem("pets", JSON.stringify(stored));
+        ]);
+        setLoading(false);
       }
-      setPets(stored);
-    } catch (e) {
-      console.error("Error reading pets from localStorage", e);
-    }
-  }, []);
+    };
 
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
-      setUser({ name: stored.name || "", country: stored.country || "" });
-    } catch (e) {
-      console.error("Error reading userProfile from localStorage", e);
-    }
-  }, []);
+    loadData();
+  }, [user, loading]);
 
   const filteredPets = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -152,17 +208,34 @@ function Home() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="container" style={{ paddingBottom: '90px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '50vh',
+          fontSize: '18px'
+        }}>
+          Cargando...
+        </div>
+        <NavBar />
+      </div>
+    );
+  }
+
   return (
     <div className="container" style={{ paddingBottom: '90px' }}>
       <header className="modern-header">
         <div className="header-top">
           <div className="greeting-section">
-            <h1 className="greeting-title">Hola, {user.name || "Amigo"} 👋</h1>
+            <h1 className="greeting-title">Hola, {userProfile.name || "Amigo"} 👋</h1>
             <p className="greeting-subtitle">Encuentra tu compañero perfecto</p>
           </div>
           <div className="user-avatar" onClick={() => navigate('/profile')}>
             <div className="avatar-circle">
-              <span className="avatar-text">{(user.name || "A").charAt(0).toUpperCase()}</span>
+              <span className="avatar-text">{(userProfile.name || "A").charAt(0).toUpperCase()}</span>
             </div>
           </div>
         </div>
