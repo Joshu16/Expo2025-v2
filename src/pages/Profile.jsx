@@ -143,42 +143,6 @@ function Profile({ user }) {
     }
   };
 
-  const debugPets = async () => {
-    console.log('=== DEBUG PETS ===');
-    console.log('Current user UID:', user.uid);
-    console.log('Current myPets state:', myPets);
-    
-    // Verificar todas las mascotas en la base de datos
-    try {
-      const allPets = await petService.getPets();
-      console.log('All pets in database:', allPets);
-      
-      const myPetsFromDB = allPets.filter(pet => pet.ownerId === user.uid);
-      console.log('My pets filtered from all pets:', myPetsFromDB);
-    } catch (error) {
-      console.error('Error getting all pets:', error);
-    }
-  };
-
-  const debugNotifications = async () => {
-    console.log('=== DEBUG NOTIFICATIONS ===');
-    console.log('Current user UID:', user.uid);
-    
-    try {
-      const notifications = await notificationService.getNotifications(user.uid);
-      console.log('All notifications for user:', notifications);
-      
-      const adoptionRequests = notifications.filter(n => n.type === 'adoption_request');
-      console.log('Adoption request notifications:', adoptionRequests);
-      
-      // También verificar todas las notificaciones en la base de datos
-      const allNotifications = await notificationService.getAllNotifications();
-      console.log('All notifications in database:', allNotifications);
-      
-    } catch (error) {
-      console.error('Error getting notifications:', error);
-    }
-  };
 
   const handlePetInputChange = (field, value) => {
     setPetFormData(prev => ({ ...prev, [field]: value }));
@@ -325,22 +289,6 @@ function Profile({ user }) {
                   >
                     {loading ? '🔄' : '↻'} Recargar
                   </button>
-                  <div className="debug-controls">
-                    <button 
-                      className="debug-button small"
-                      onClick={debugPets}
-                      title="Debug mascotas en consola"
-                    >
-                      🔍
-                    </button>
-                    <button 
-                      className="debug-button small"
-                      onClick={debugNotifications}
-                      title="Debug notificaciones en consola"
-                    >
-                      🔔
-                    </button>
-                  </div>
                 </div>
               </div>
               {myPets.length === 0 ? (

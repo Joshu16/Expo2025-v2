@@ -51,8 +51,6 @@ function Home({ user }) {
       
       if (user) {
         try {
-          // Test básico de Firebase
-          console.log("Testing Firebase connection...");
           console.log("User UID:", user.uid);
           console.log("User displayName:", user.displayName);
           console.log("User email:", user.email);
