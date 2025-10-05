@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { userService, petService, favoriteService } from "../firebase/services.js";
-import { populateCategories } from "../utils/populateFirestore.js";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
 
@@ -12,33 +11,12 @@ function Home({ user }) {
   const [userProfile, setUserProfile] = useState({ name: "", address: "" });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [populating, setPopulating] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   // Si venimos de Categories, obtenemos la categoría seleccionada
   const categoryFilter = location.state?.category || "";
 
-  // Función para poblar la base de datos (solo para desarrollo)
-  const handlePopulateDatabase = async () => {
-    setPopulating(true);
-    try {
-      console.log('Iniciando población de base de datos...');
-      const success = await populateCategories();
-      if (success) {
-        alert('✅ Base de datos poblada exitosamente!');
-        // Recargar la página para ver los cambios
-        window.location.reload();
-      } else {
-        alert('❌ Error al poblar la base de datos');
-      }
-    } catch (error) {
-      console.error('Error populating database:', error);
-      alert('❌ Error al poblar la base de datos: ' + error.message);
-    } finally {
-      setPopulating(false);
-    }
-  };
 
   // Función para cargar favoritos del usuario
   const loadFavorites = async () => {
@@ -213,20 +191,18 @@ function Home({ user }) {
     navigate("/adopt", { state: { pet } });
   };
 
-  const handleUploadClick = () => {
-    navigate("/upload");
-  };
 
   const handleTrackingClick = () => {
     navigate("/tracking");
   };
 
-  const handleChatClick = () => {
-    navigate("/chat");
-  };
 
   const handleSheltersClick = () => {
     navigate("/shelters");
+  };
+
+  const handleUsersClick = () => {
+    navigate("/users");
   };
 
   const handleNotificationsClick = () => {
@@ -290,9 +266,20 @@ function Home({ user }) {
             <h1 className="greeting-title">Hola, {userProfile.name || "Amigo"} 👋</h1>
             <p className="greeting-subtitle">Encuentra tu compañero perfecto</p>
           </div>
-          <div className="user-avatar" onClick={() => navigate('/profile')}>
-            <div className="avatar-circle">
-              <span className="avatar-text">{(userProfile.name || "A").charAt(0).toUpperCase()}</span>
+          <div className="header-actions">
+            <button 
+              className="conversations-button"
+              onClick={() => navigate('/conversations')}
+              title="Conversaciones"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+              </svg>
+            </button>
+            <div className="user-avatar" onClick={() => navigate('/profile')}>
+              <div className="avatar-circle">
+                <span className="avatar-text">{(userProfile.name || "A").charAt(0).toUpperCase()}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -319,35 +306,17 @@ function Home({ user }) {
 
         {/* Acciones rápidas */}
         <div className="quick-actions">
-          <button className="quick-action-btn" onClick={handleUploadClick}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Subir mascota</span>
-          </button>
           <button className="quick-action-btn" onClick={handleTrackingClick}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>Seguimiento</span>
           </button>
-          {/* Botón de debug temporal - solo para desarrollo */}
-          <button 
-            className="quick-action-btn" 
-            onClick={handlePopulateDatabase}
-            disabled={populating}
-            style={{ backgroundColor: '#f59e0b', color: 'white' }}
-          >
+          <button className="quick-action-btn" onClick={handleUsersClick}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>{populating ? 'Poblando...' : 'Poblar DB'}</span>
-          </button>
-          <button className="quick-action-btn" onClick={handleChatClick}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Mensajes</span>
+            <span>Usuarios</span>
           </button>
           <button className="quick-action-btn" onClick={handleSheltersClick}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -360,11 +329,14 @@ function Home({ user }) {
 
       <main className="main-content">
         <div className="section-header">
-          <h2 className="section-title">
-            {showOnlyFavorites ? 'Tus favoritas' : 'Mascotas disponibles'}
-          </h2>
-          <div className="section-actions">
-            {user?.uid && favorites.length > 0 && (
+          <div className="section-title-row">
+            <h2 className="section-title">
+              {showOnlyFavorites ? 'Tus favoritas' : 'Mascotas disponibles'}
+            </h2>
+            <span className="pets-count">{filteredPets.length} mascotas</span>
+          </div>
+          {user?.uid && favorites.length > 0 && (
+            <div className="favorites-controls">
               <button 
                 className={`favorites-toggle ${showOnlyFavorites ? 'active' : ''}`}
                 onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
@@ -374,9 +346,8 @@ function Home({ user }) {
                 </svg>
                 {showOnlyFavorites ? 'Ver todas' : 'Solo favoritas'}
               </button>
-            )}
-            <span className="pets-count">{filteredPets.length} mascotas</span>
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="pets-grid">

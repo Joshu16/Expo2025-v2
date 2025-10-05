@@ -109,6 +109,33 @@ function AdoptionDetails({ user }) {
     }
   };
 
+  const handleStartChat = async () => {
+    try {
+      if (!adoption || !user?.uid) return;
+
+      // Determinar el otro usuario (adoptador o dueño)
+      const otherUserId = adoption.userId === user.uid ? adoption.pet.ownerId : adoption.userId;
+      
+      if (!otherUserId) {
+        alert('No se pudo identificar al otro usuario');
+        return;
+      }
+
+      // Obtener o crear conversación
+      const conversationId = await chatService.getOrCreateConversation(
+        user.uid, 
+        otherUserId, 
+        adoption.pet.id
+      );
+
+      // Navegar al chat
+      navigate(`/chat/${conversationId}`);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      alert('Error al iniciar el chat');
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !conversationId) return;
@@ -270,6 +297,18 @@ function AdoptionDetails({ user }) {
                 onClick={() => handleStatusChange("rejected")}
               >
                 Rechazar
+              </button>
+            </div>
+          )}
+
+          {/* Botón de chat para comunicarse */}
+          {adoption && user?.uid && (
+            <div className="chat-actions">
+              <button 
+                className="action-button chat"
+                onClick={handleStartChat}
+              >
+                💬 Iniciar Chat
               </button>
             </div>
           )}

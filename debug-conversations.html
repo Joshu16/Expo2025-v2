@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Conversaciones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Conversaciones</h1>
+        
+        <button id="checkConversations" class="button">
+            📋 Ver Todas las Conversaciones
+        </button>
+        
+        <button id="checkNotifications" class="button">
+            🔔 Ver Todas las Notificaciones
+        </button>
+        
+        <button id="checkAdoptionRequests" class="button">
+            📝 Ver Solicitudes de Adopción
+        </button>
+        
+        <div id="log" class="log" style="display: none;">
+            <div id="logContent"></div>
+        </div>
+        
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZ28tY4uu7Ec0pou2vQl9PlEiqU0IFc4U",
+            authDomain: "animals-adoption-app.firebaseapp.com",
+            projectId: "animals-adoption-app",
+            storageBucket: "animals-adoption-app.firebasestorage.app",
+            messagingSenderId: "360360840693",
+            appId: "1:360360840693:web:f81ab7be2be926eca5a4bc",
+            measurementId: "G-HDDQLXGS7R"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const logContent = document.getElementById('logContent');
+            logDiv.style.display = 'block';
+            logContent.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showResult(message, isSuccess = true) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = isSuccess ? 'success' : 'error';
+            resultDiv.innerHTML = message;
+        }
+
+        async function checkConversations() {
+            try {
+                log('Verificando conversaciones...');
+                
+                const conversationsRef = collection(db, 'conversations');
+                const conversationsSnapshot = await getDocs(conversationsRef);
+                const conversations = conversationsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                log(`Encontradas ${conversations.length} conversaciones:`);
+                conversations.forEach((conv, index) => {
+                    log(`${index + 1}. ID: ${conv.id}`);
+                    log(`   Participantes: ${conv.participants?.join(', ')}`);
+                    log(`   Pet ID: ${conv.petId || 'N/A'}`);
+                    log(`   Último mensaje: ${conv.lastMessage || 'N/A'}`);
+                    log(`   Creada: ${conv.createdAt || 'N/A'}`);
+                    log('---');
+                });
+                
+                showResult(`✅ Se encontraron ${conversations.length} conversaciones`, true);
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showResult('❌ Error al verificar conversaciones: ' + error.message, false);
+            }
+        }
+
+        async function checkNotifications() {
+            try {
+                log('Verificando notificaciones...');
+                
+                const notificationsRef = collection(db, 'notifications');
+                const notificationsSnapshot = await getDocs(notificationsRef);
+                const notifications = notificationsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                log(`Encontradas ${notifications.length} notificaciones:`);
+                notifications.forEach((notif, index) => {
+                    log(`${index + 1}. ID: ${notif.id}`);
+                    log(`   Usuario: ${notif.userId}`);
+                    log(`   Tipo: ${notif.type}`);
+                    log(`   Mensaje: ${notif.message}`);
+                    log(`   Pet ID: ${notif.petId || 'N/A'}`);
+                    log(`   Leída: ${notif.read ? 'Sí' : 'No'}`);
+                    log('---');
+                });
+                
+                showResult(`✅ Se encontraron ${notifications.length} notificaciones`, true);
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showResult('❌ Error al verificar notificaciones: ' + error.message, false);
+            }
+        }
+
+        async function checkAdoptionRequests() {
+            try {
+                log('Verificando solicitudes de adopción...');
+                
+                const requestsRef = collection(db, 'adoptionRequests');
+                const requestsSnapshot = await getDocs(requestsRef);
+                const requests = requestsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                log(`Encontradas ${requests.length} solicitudes:`);
+                requests.forEach((request, index) => {
+                    log(`${index + 1}. ID: ${request.id}`);
+                    log(`   Adoptante: ${request.adopterId}`);
+                    log(`   Dueño: ${request.ownerId}`);
+                    log(`   Pet ID: ${request.petId}`);
+                    log(`   Estado: ${request.status}`);
+                    log(`   Mensaje: ${request.message || 'N/A'}`);
+                    log('---');
+                });
+                
+                showResult(`✅ Se encontraron ${requests.length} solicitudes de adopción`, true);
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showResult('❌ Error al verificar solicitudes: ' + error.message, false);
+            }
+        }
+
+        document.getElementById('checkConversations').addEventListener('click', checkConversations);
+        document.getElementById('checkNotifications').addEventListener('click', checkNotifications);
+        document.getElementById('checkAdoptionRequests').addEventListener('click', checkAdoptionRequests);
+    </script>
+</body>
+</html>

@@ -13,6 +13,8 @@ import Adopt from "./Adopt.jsx";
 import Tracking from "./Tracking.jsx";
 import AdoptionDetails from "./AdoptionDetails.jsx";
 import Chat from "./Chat.jsx";
+import Conversations from "./Conversations.jsx";
+import Users from "./Users.jsx";
 import Favorites from "./Favorites.jsx";
 import MyPets from "./MyPets.jsx";
 import Shelters from "./Shelters.jsx";
@@ -69,7 +71,9 @@ function App() {
       <Route path="/adopt" element={<ProtectedRoute element={<Adopt user={user} />} user={user} />} />
       <Route path="/tracking" element={<ProtectedRoute element={<Tracking user={user} />} user={user} />} />
       <Route path="/adoption-details" element={<ProtectedRoute element={<AdoptionDetails user={user} />} user={user} />} />
-      <Route path="/chat" element={<ProtectedRoute element={<Chat user={user} />} user={user} />} />
+      <Route path="/chat/:conversationId" element={<ProtectedRoute element={<Chat user={user} />} user={user} />} />
+      <Route path="/conversations" element={<ProtectedRoute element={<Conversations user={user} />} user={user} />} />
+      <Route path="/users" element={<ProtectedRoute element={<Users user={user} />} user={user} />} />
       <Route path="/favorites" element={<ProtectedRoute element={<Favorites user={user} />} user={user} />} />
       <Route path="/my-pets" element={<ProtectedRoute element={<MyPets user={user} />} user={user} />} />
       <Route path="/shelters" element={<ProtectedRoute element={<Shelters />} user={user} />} />

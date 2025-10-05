@@ -202,8 +202,32 @@ body {
   font-weight: 400;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.conversations-button {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conversations-button:hover {
+  background: var(--accent-primary);
+  color: white;
+  transform: scale(1.05);
+}
+
 .user-avatar {
-  margin-left: var(--space-md);
   cursor: pointer;
   transition: all var(--transition-normal);
 }
@@ -242,12 +266,12 @@ body {
 .search-bar {
   display: flex;
   align-items: center;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-primary);
+  border-radius: 25px;
+  padding: 12px 16px;
   border: 1px solid var(--border-color);
-  transition: all var(--transition-normal);
-  min-height: 48px;
+  transition: all 0.2s;
+  min-height: 44px;
   position: relative;
 }
 
@@ -308,8 +332,8 @@ body {
 /* Acciones rápidas */
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-sm);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: var(--space-lg);
   padding: 0 var(--space-xs);
 }
@@ -318,16 +342,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 4px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: var(--space-md) var(--space-sm);
+  padding: 12px 8px;
   cursor: pointer;
   transition: all var(--transition-normal);
   text-decoration: none;
   color: var(--text-primary);
-  min-height: 80px;
+  min-height: 70px;
   justify-content: center;
 }
 
@@ -358,16 +382,14 @@ body {
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: var(--space-lg);
 }
 
-.section-actions {
+.section-title-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--space-md);
+  margin-bottom: 12px;
 }
 
 .section-title {
@@ -381,6 +403,11 @@ body {
   font-size: 14px;
   color: var(--text-tertiary);
   font-weight: 500;
+}
+
+.favorites-controls {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .favorites-toggle {

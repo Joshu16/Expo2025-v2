@@ -1,236 +1,239 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/App.css";
-import "../styles/Chat.css";
-import NavBar from "../components/navbar.jsx";
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import '../styles/Chat.css';
+import NavBar from '../components/navbar.jsx';
+import { chatService, userService } from '../firebase/services.js';
 
-function Chat() {
+function Chat({ user }) {
+  const { conversationId } = useParams();
   const navigate = useNavigate();
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [otherUser, setOtherUser] = useState(null);
+  const messagesEndRef = useRef(null);
+  const unsubscribeRef = useRef(null);
 
   useEffect(() => {
-    // Cargar conversaciones desde localStorage
-    try {
-      const stored = JSON.parse(localStorage.getItem("conversations") || "[]");
-      setConversations(stored);
-    } catch (e) {
-      console.error("Error loading conversations", e);
+    if (!user?.uid) {
+      navigate('/login');
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    if (selectedConversation) {
-      // Cargar mensajes de la conversación seleccionada
-      try {
-        const storedMessages = JSON.parse(
-          localStorage.getItem(`messages_${selectedConversation.id}`) || "[]"
-        );
-        setMessages(storedMessages);
-      } catch (e) {
-        console.error("Error loading messages", e);
+    if (conversationId) {
+      loadMessages();
+      loadOtherUser();
+    }
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
       }
-    }
-  }, [selectedConversation]);
+    };
+  }, [conversationId, user]);
 
-  const handleConversationClick = (conversation) => {
-    setSelectedConversation(conversation);
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      console.log('Chat: Loading messages for conversation:', conversationId);
+      
+      // Suscribirse a mensajes en tiempo real
+      unsubscribeRef.current = chatService.subscribeToMessages(conversationId, (newMessages) => {
+        console.log('Chat: Received messages:', newMessages);
+        setMessages(newMessages);
+        scrollToBottom();
+        
+        // Marcar mensajes como leídos
+        chatService.markMessagesAsRead(conversationId, user.uid);
+      });
+      
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSendMessage = (e) => {
+  const loadOtherUser = async () => {
+    try {
+      // Obtener información de la conversación para identificar al otro usuario
+      const conversations = await chatService.getConversations(user.uid);
+      const currentConversation = conversations.find(conv => conv.id === conversationId);
+      
+      if (currentConversation) {
+        const otherUserId = currentConversation.participants.find(id => id !== user.uid);
+        if (otherUserId) {
+          const otherUserData = await userService.getUserProfile(otherUserId);
+          setOtherUser(otherUserData || { uid: otherUserId, name: 'Usuario' });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading other user:', error);
+    }
+  };
+
+  const sendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
-
-    const message = {
-      id: Date.now(),
-      content: newMessage,
-      sender: "user",
-      timestamp: new Date().toISOString(),
-    };
-
-    const updatedMessages = [...messages, message];
-    setMessages(updatedMessages);
-    setNewMessage("");
-
-    // Guardar en localStorage
-    try {
-      localStorage.setItem(`messages_${selectedConversation.id}`, JSON.stringify(updatedMessages));
-    } catch (e) {
-      console.error("Error saving message", e);
-    }
-
-    // Simular respuesta automática después de 2 segundos
-    setTimeout(() => {
-      const autoReply = {
-        id: Date.now() + 1,
-        content: "Gracias por tu mensaje. Te responderé pronto.",
-        sender: "other",
-        timestamp: new Date().toISOString(),
-      };
-
-      const finalMessages = [...updatedMessages, autoReply];
-      setMessages(finalMessages);
-
-      try {
-        localStorage.setItem(`messages_${selectedConversation.id}`, JSON.stringify(finalMessages));
-      } catch (e) {
-        console.error("Error saving auto-reply", e);
-      }
-    }, 2000);
-  };
-
-  const startNewConversation = () => {
-    const newConversation = {
-      id: Date.now(),
-      name: "Nueva Conversación",
-      lastMessage: "Iniciar conversación",
-      timestamp: new Date().toISOString(),
-      unread: 0,
-    };
-
-    const updatedConversations = [newConversation, ...conversations];
-    setConversations(updatedConversations);
-    setSelectedConversation(newConversation);
-    setMessages([]);
+    
+    if (!newMessage.trim() || sending) return;
 
     try {
-      localStorage.setItem("conversations", JSON.stringify(updatedConversations));
-    } catch (e) {
-      console.error("Error saving conversation", e);
+      setSending(true);
+      console.log('Chat: Sending message:', { conversationId, message: newMessage.trim() });
+      await chatService.sendMessage(conversationId, user.uid, newMessage.trim());
+      console.log('Chat: Message sent successfully');
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error al enviar el mensaje');
+    } finally {
+      setSending(false);
     }
   };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Hoy';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Ayer';
+    } else {
+      return date.toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit' 
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="chat-container">
+        <NavBar />
+        <div className="chat-loading">
+          <div className="loading-spinner"></div>
+          <p>Cargando conversación...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container">
-      <header className="modern-header">
-        <h2 className="section-title">Mensajes</h2>
-        <p className="page-subtitle">Comunícate con otros usuarios</p>
-      </header>
-
-      <main className="main-content">
-        <div className="chat-container">
-          {/* Lista de conversaciones */}
-          <div className="conversations-sidebar">
-            <div className="conversations-header">
-              <h3>Conversaciones</h3>
-              <button className="new-chat-button" onClick={startNewConversation}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                </svg>
-              </button>
-            </div>
-
-            <div className="conversations-list">
-              {conversations.length === 0 ? (
-                <div className="empty-conversations">
-                  <div className="empty-icon">💬</div>
-                  <p>No hay conversaciones</p>
-                  <button className="start-chat-button" onClick={startNewConversation}>
-                    Iniciar conversación
-                  </button>
-                </div>
-              ) : (
-                conversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    className={`conversation-item ${
-                      selectedConversation?.id === conversation.id ? "active" : ""
-                    }`}
-                    onClick={() => handleConversationClick(conversation)}
-                  >
-                    <div className="conversation-avatar">
-                      <span>{conversation.name.charAt(0)}</span>
-                    </div>
-                    <div className="conversation-info">
-                      <div className="conversation-name">{conversation.name}</div>
-                      <div className="conversation-preview">{conversation.lastMessage}</div>
-                    </div>
-                    <div className="conversation-meta">
-                      <div className="conversation-time">
-                        {new Date(conversation.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                      {conversation.unread > 0 && (
-                        <div className="unread-badge">{conversation.unread}</div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+    <div className="chat-container">
+      <NavBar />
+      
+      <div className="chat-header">
+        <button 
+          className="back-button"
+          onClick={() => navigate('/conversations')}
+        >
+          ← Volver
+        </button>
+        <div className="chat-user-info">
+          <div className="user-avatar">
+            {otherUser?.name ? otherUser.name.charAt(0).toUpperCase() : 'U'}
           </div>
-
-          {/* Área de chat */}
-          <div className="chat-area">
-            {selectedConversation ? (
-              <>
-                <div className="chat-header">
-                  <div className="chat-user-info">
-                    <div className="chat-avatar">
-                      <span>{selectedConversation.name.charAt(0)}</span>
-                    </div>
-                    <div>
-                      <div className="chat-user-name">{selectedConversation.name}</div>
-                      <div className="chat-status">En línea</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="messages-container">
-                  {messages.length === 0 ? (
-                    <div className="no-messages">
-                      <div className="no-messages-icon">💬</div>
-                      <p>Inicia la conversación</p>
-                    </div>
-                  ) : (
-                    messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`message ${message.sender === "user" ? "user-message" : "other-message"}`}
-                      >
-                        <div className="message-content">{message.content}</div>
-                        <div className="message-time">
-                          {new Date(message.timestamp).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <form onSubmit={handleSendMessage} className="message-form">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Escribe un mensaje..."
-                    className="message-input"
-                  />
-                  <button type="submit" className="send-button">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                    </svg>
-                  </button>
-                </form>
-              </>
-            ) : (
-              <div className="no-conversation-selected">
-                <div className="no-conversation-icon">💬</div>
-                <h3>Selecciona una conversación</h3>
-                <p>Elige una conversación de la lista para comenzar a chatear</p>
-              </div>
-            )}
+          <div className="user-details">
+            <h3>{otherUser?.name || 'Usuario'}</h3>
+            <p>En línea</p>
           </div>
         </div>
-      </main>
+      </div>
 
-      <NavBar />
+      <div className="chat-messages">
+        {messages.length === 0 ? (
+          <div className="no-messages">
+            <p>No hay mensajes aún. ¡Envía el primero!</p>
+          </div>
+        ) : (
+          messages.map((message, index) => {
+            const isOwn = message.senderId === user.uid;
+            const isSystem = message.senderId === 'system' || message.isSystemMessage;
+            const showDate = index === 0 || 
+              formatDate(message.timestamp) !== formatDate(messages[index - 1].timestamp);
+            
+            // Mensaje del sistema
+            if (isSystem) {
+              return (
+                <div key={message.id}>
+                  {showDate && (
+                    <div className="message-date">
+                      {formatDate(message.timestamp)}
+                    </div>
+                  )}
+                  <div className="message system">
+                    <div className="message-content">
+                      <p>{message.message}</p>
+                      <span className="message-time">
+                        {formatTime(message.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Mensaje normal
+            return (
+              <div key={message.id}>
+                {showDate && (
+                  <div className="message-date">
+                    {formatDate(message.timestamp)}
+                  </div>
+                )}
+                <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
+                  {!isOwn && (
+                    <div className="message-sender">
+                      {message.senderName || 'Usuario'}
+                    </div>
+                  )}
+                  <div className="bubble-content">
+                    <p>{message.message}</p>
+                    <span className="bubble-time">
+                      {formatTime(message.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form className="chat-input" onSubmit={sendMessage}>
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Escribe un mensaje..."
+          disabled={sending}
+          maxLength={500}
+        />
+        <button 
+          type="submit" 
+          disabled={!newMessage.trim() || sending}
+          className="send-button"
+        >
+          {sending ? '⏳' : '📤'}
+        </button>
+      </form>
     </div>
   );
 }

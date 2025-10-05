@@ -141,6 +141,21 @@
   background: #2563eb;
 }
 
+.action-button.chat {
+  background: #8b5cf6;
+  color: white;
+}
+
+.action-button.chat:hover {
+  background: #7c3aed;
+}
+
+.chat-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
 .adopter-section {
   background: var(--card-bg);
   border: 1px solid var(--border-color);

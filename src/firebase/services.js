@@ -166,21 +166,53 @@ export const chatService = {
     }
   },
 
+  // Escuchar mensajes en tiempo real
+  subscribeToMessages: (conversationId, callback) => {
+    console.log('chatService.subscribeToMessages called for:', conversationId);
+    const q = query(
+      collection(db, 'messages'),
+      where('conversationId', '==', conversationId),
+      orderBy('timestamp', 'asc')
+    );
+    
+    return onSnapshot(q, (querySnapshot) => {
+      console.log('chatService.subscribeToMessages: received snapshot with', querySnapshot.docs.length, 'messages');
+      const messages = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      console.log('chatService.subscribeToMessages: processed messages:', messages);
+      callback(messages);
+    }, (error) => {
+      console.error('chatService.subscribeToMessages error:', error);
+    });
+  },
+
   // Enviar mensaje
-  sendMessage: async (conversationId, messageData) => {
+  sendMessage: async (conversationId, senderId, messageText) => {
     try {
-      const message = {
-        ...messageData,
+      console.log('chatService.sendMessage called:', { conversationId, senderId, messageText });
+      
+      // Obtener nombre del remitente
+      const senderProfile = await userService.getUserProfile(senderId);
+      const senderName = senderProfile?.name || 'Usuario';
+      
+      const messageData = {
         conversationId,
-        timestamp: new Date().toISOString()
+        senderId,
+        senderName,
+        message: messageText,
+        timestamp: new Date().toISOString(),
+        read: false
       };
       
-      const docRef = await addDoc(collection(db, 'messages'), message);
+      const docRef = await addDoc(collection(db, 'messages'), messageData);
+      console.log('✅ Message sent with ID:', docRef.id);
       
       // Actualizar la conversación con el último mensaje
       await updateDoc(doc(db, 'conversations', conversationId), {
-        lastMessage: messageData.content,
-        lastMessageTime: message.timestamp
+        lastMessage: messageText,
+        lastMessageTime: new Date().toISOString()
       });
       
       return docRef.id;
@@ -190,21 +222,104 @@ export const chatService = {
     }
   },
 
-  // Escuchar mensajes en tiempo real
-  subscribeToMessages: (conversationId, callback) => {
-    const q = query(
-      collection(db, 'messages'),
-      where('conversationId', '==', conversationId),
-      orderBy('timestamp', 'asc')
-    );
-    
-    return onSnapshot(q, (querySnapshot) => {
-      const messages = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(messages);
-    });
+  // Obtener o crear conversación entre dos usuarios
+  getOrCreateConversation: async (userId1, userId2, petId = null) => {
+    try {
+      console.log('chatService.getOrCreateConversation called:', { userId1, userId2, petId });
+      
+      // Buscar conversación existente entre estos dos usuarios (sin importar el petId)
+      const q = query(
+        collection(db, 'conversations'),
+        where('participants', 'array-contains', userId1)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      const existingConversation = querySnapshot.docs.find(doc => {
+        const data = doc.data();
+        // Buscar conversación que contenga ambos usuarios, independientemente del petId
+        return data.participants.includes(userId2) && data.participants.includes(userId1);
+      });
+      
+      if (existingConversation) {
+        console.log('✅ Found existing conversation:', existingConversation.id);
+        
+        // Si se proporciona un petId y la conversación no lo tiene, actualizarlo
+        if (petId && existingConversation.data().petId !== petId) {
+          console.log('Updating conversation with new petId:', petId);
+          await updateDoc(doc(db, 'conversations', existingConversation.id), {
+            petId: petId,
+            lastMessageTime: new Date().toISOString()
+          });
+        }
+        
+        return existingConversation.id;
+      }
+      
+      // Crear nueva conversación solo si no existe ninguna entre estos usuarios
+      const conversationId = await chatService.createConversation([userId1, userId2], petId);
+      console.log('✅ Created new conversation:', conversationId);
+      return conversationId;
+    } catch (error) {
+      console.error('Error getting or creating conversation:', error);
+      throw error;
+    }
+  },
+
+  // Marcar mensajes como leídos
+  markMessagesAsRead: async (conversationId, userId) => {
+    try {
+      const q = query(
+        collection(db, 'messages'),
+        where('conversationId', '==', conversationId),
+        where('senderId', '!=', userId),
+        where('read', '==', false)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const updatePromises = querySnapshot.docs.map(doc => 
+        updateDoc(doc.ref, { read: true })
+      );
+      
+      await Promise.all(updatePromises);
+      console.log(`✅ Marked ${updatePromises.length} messages as read`);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  },
+
+  // Eliminar conversación y todos sus mensajes
+  deleteConversation: async (conversationId) => {
+    try {
+      console.log('chatService.deleteConversation called for:', conversationId);
+      
+      // 1. Eliminar todos los mensajes de la conversación
+      const messagesQuery = query(
+        collection(db, 'messages'),
+        where('conversationId', '==', conversationId)
+      );
+      const messagesSnapshot = await getDocs(messagesQuery);
+      
+      console.log(`Found ${messagesSnapshot.size} messages to delete`);
+      const deleteMessagesPromises = messagesSnapshot.docs.map(doc => {
+        console.log('Deleting message:', doc.id);
+        return deleteDoc(doc.ref);
+      });
+      
+      if (deleteMessagesPromises.length > 0) {
+        await Promise.all(deleteMessagesPromises);
+        console.log('✅ Deleted all messages');
+      }
+      
+      // 2. Eliminar la conversación
+      console.log('Deleting conversation:', conversationId);
+      await deleteDoc(doc(db, 'conversations', conversationId));
+      console.log('✅ Conversation deleted successfully');
+      
+      return { success: true, deletedMessages: messagesSnapshot.size };
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      throw error;
+    }
   }
 };
 
@@ -374,7 +489,133 @@ export const petService = {
   // Eliminar mascota
   deletePet: async (petId) => {
     try {
+      console.log('petService.deletePet called for petId:', petId);
+      
+      // Primero obtener la información de la mascota
+      const petDoc = await getDoc(doc(db, 'pets', petId));
+      if (!petDoc.exists()) {
+        throw new Error('Mascota no encontrada');
+      }
+      
+      const petData = petDoc.data();
+      const petName = petData.name;
+      console.log('Deleting pet:', petName);
+      
+      // 1. Eliminar todas las solicitudes de adopción relacionadas
+      console.log('Deleting adoption requests for pet:', petId);
+      const adoptionRequestsQuery = query(
+        collection(db, 'adoptionRequests'),
+        where('petId', '==', petId)
+      );
+      const adoptionRequestsSnapshot = await getDocs(adoptionRequestsQuery);
+      const adoptionRequests = adoptionRequestsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      console.log(`Found ${adoptionRequests.length} adoption requests to delete`);
+      const deleteAdoptionRequestsPromises = adoptionRequests.map(request => {
+        console.log('Deleting adoption request:', request.id);
+        return deleteDoc(doc(db, 'adoptionRequests', request.id));
+      });
+      
+      if (deleteAdoptionRequestsPromises.length > 0) {
+        await Promise.all(deleteAdoptionRequestsPromises);
+        console.log('✅ Deleted all adoption requests');
+      }
+      
+      // 2. Eliminar todas las notificaciones relacionadas
+      console.log('Deleting notifications for pet:', petId);
+      const notificationsQuery = query(
+        collection(db, 'notifications'),
+        where('petId', '==', petId)
+      );
+      const notificationsSnapshot = await getDocs(notificationsQuery);
+      const notifications = notificationsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      console.log(`Found ${notifications.length} notifications to delete`);
+      const deleteNotificationsPromises = notifications.map(notification => {
+        console.log('Deleting notification:', notification.id);
+        return deleteDoc(doc(db, 'notifications', notification.id));
+      });
+      
+      if (deleteNotificationsPromises.length > 0) {
+        await Promise.all(deleteNotificationsPromises);
+        console.log('✅ Deleted all notifications');
+      }
+      
+      // 3. Actualizar conversaciones relacionadas con mensaje de mascota no disponible
+      console.log('Updating conversations for pet:', petId);
+      const conversationsQuery = query(
+        collection(db, 'conversations'),
+        where('petId', '==', petId)
+      );
+      const conversationsSnapshot = await getDocs(conversationsQuery);
+      const conversations = conversationsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      console.log(`Found ${conversations.length} conversations to update`);
+      const updateConversationsPromises = conversations.map(conversation => {
+        console.log('Updating conversation:', conversation.id);
+        // Agregar mensaje de sistema sobre mascota no disponible
+        return addDoc(collection(db, 'messages'), {
+          conversationId: conversation.id,
+          senderId: 'system',
+          message: `⚠️ ${petName} ya no está disponible para adopción.`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          isSystemMessage: true
+        });
+      });
+      
+      if (updateConversationsPromises.length > 0) {
+        await Promise.all(updateConversationsPromises);
+        console.log('✅ Added system messages to conversations');
+      }
+      
+      // 4. Eliminar favoritos relacionados
+      console.log('Deleting favorites for pet:', petId);
+      const favoritesQuery = query(
+        collection(db, 'favorites'),
+        where('petId', '==', petId)
+      );
+      const favoritesSnapshot = await getDocs(favoritesQuery);
+      const favorites = favoritesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      console.log(`Found ${favorites.length} favorites to delete`);
+      const deleteFavoritesPromises = favorites.map(favorite => {
+        console.log('Deleting favorite:', favorite.id);
+        return deleteDoc(doc(db, 'favorites', favorite.id));
+      });
+      
+      if (deleteFavoritesPromises.length > 0) {
+        await Promise.all(deleteFavoritesPromises);
+        console.log('✅ Deleted all favorites');
+      }
+      
+      // 5. Finalmente, eliminar la mascota
+      console.log('Deleting pet document:', petId);
       await deleteDoc(doc(db, 'pets', petId));
+      console.log('✅ Pet deleted successfully');
+      
+      return {
+        success: true,
+        deleted: {
+          adoptionRequests: adoptionRequests.length,
+          notifications: notifications.length,
+          conversations: conversations.length,
+          favorites: favorites.length
+        }
+      };
+      
     } catch (error) {
       console.error('Error deleting pet:', error);
       throw error;
@@ -782,6 +1023,23 @@ export const userService = {
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
+    }
+  },
+
+  // Obtener todos los usuarios (para búsqueda)
+  getAllUsers: async () => {
+    try {
+      console.log('getAllUsers called');
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const users = usersSnapshot.docs.map(doc => ({
+        uid: doc.id,
+        ...doc.data()
+      }));
+      console.log(`Found ${users.length} users`);
+      return users;
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      return [];
     }
   },
 

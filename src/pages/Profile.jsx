@@ -206,15 +206,35 @@ function Profile({ user }) {
   const handleDeletePet = async () => {
     if (!editingPet) return;
     
-    if (window.confirm(`¿Estás seguro de que quieres eliminar a ${editingPet.name}? Esta acción no se puede deshacer.`)) {
+    const confirmMessage = `¿Estás seguro de que quieres eliminar a ${editingPet.name}?\n\nEsto también eliminará:\n• Todas las solicitudes de adopción\n• Todas las notificaciones relacionadas\n• Mensajes en chats (se notificará a los usuarios)\n• Favoritos de otros usuarios\n\nEsta acción no se puede deshacer.`;
+    
+    if (window.confirm(confirmMessage)) {
       try {
-        await petService.deletePet(editingPet.id);
-        alert('Mascota eliminada correctamente');
+        const result = await petService.deletePet(editingPet.id);
+        
+        let message = `✅ ${editingPet.name} eliminado correctamente`;
+        if (result.deleted) {
+          message += `\n\nEliminado:\n`;
+          if (result.deleted.adoptionRequests > 0) {
+            message += `• ${result.deleted.adoptionRequests} solicitudes de adopción\n`;
+          }
+          if (result.deleted.notifications > 0) {
+            message += `• ${result.deleted.notifications} notificaciones\n`;
+          }
+          if (result.deleted.conversations > 0) {
+            message += `• Mensajes en ${result.deleted.conversations} conversaciones\n`;
+          }
+          if (result.deleted.favorites > 0) {
+            message += `• ${result.deleted.favorites} favoritos\n`;
+          }
+        }
+        
+        alert(message);
         setEditingPet(null);
         await loadUserData();
       } catch (error) {
         console.error('Error deleting pet:', error);
-        alert('Error al eliminar la mascota');
+        alert('Error al eliminar la mascota: ' + error.message);
       }
     }
   };
@@ -299,24 +319,28 @@ function Profile({ user }) {
                 <h3>Mis Mascotas ({myPets.length})</h3>
                 <div className="section-actions">
                   <button 
-                    className="debug-button"
-                    onClick={debugPets}
-                  >
-                    🔍 Debug Pets
-                  </button>
-                  <button 
-                    className="debug-button"
-                    onClick={debugNotifications}
-                  >
-                    🔔 Debug Notifications
-                  </button>
-                  <button 
                     className="refresh-button"
                     onClick={loadUserData}
                     disabled={loading}
                   >
                     {loading ? '🔄' : '↻'} Recargar
                   </button>
+                  <div className="debug-controls">
+                    <button 
+                      className="debug-button small"
+                      onClick={debugPets}
+                      title="Debug mascotas en consola"
+                    >
+                      🔍
+                    </button>
+                    <button 
+                      className="debug-button small"
+                      onClick={debugNotifications}
+                      title="Debug notificaciones en consola"
+                    >
+                      🔔
+                    </button>
+                  </div>
                 </div>
               </div>
               {myPets.length === 0 ? (

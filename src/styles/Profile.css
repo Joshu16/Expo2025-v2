@@ -544,6 +544,20 @@ body[data-theme="dark"] .modal-actions {
   transform: translateY(-1px);
 }
 
+.debug-button.small {
+  padding: 8px;
+  font-size: 16px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+}
+
+.debug-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .section-actions {
   display: flex;
   gap: var(--space-sm);
