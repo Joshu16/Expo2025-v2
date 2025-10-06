@@ -78,12 +78,7 @@
   --border-hover: #48484A;
 }
 
-/* Mejoras para modo claro */
-body:not([data-theme="dark"]) .search-bar {
-  background: var(--bg-primary);
-  border-color: var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
+/* Eliminado - no más fondos en search */
 
 body:not([data-theme="dark"]) .quick-action-btn {
   background: var(--bg-primary);
@@ -258,84 +253,54 @@ body {
   font-weight: 600;
 }
 
-/* Contenedor de búsqueda moderno */
+/* Input de búsqueda - Completamente transparente */
 .search-container {
   margin-bottom: var(--space-md);
-}
-
-.search-bar {
+  position: relative;
   display: flex;
   align-items: center;
-  background: var(--bg-primary);
-  border-radius: 25px;
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  transition: all 0.2s;
-  min-height: 44px;
-  position: relative;
-}
-
-.search-bar:focus-within {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  background: none !important;
+  background-color: transparent !important;
 }
 
 .search-icon {
-  color: var(--text-tertiary);
-  margin-right: var(--space-sm);
-  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
   width: 20px;
   height: 20px;
-  position: relative;
   z-index: 1;
+  pointer-events: none;
 }
 
 .search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 16px;
-  color: var(--text-primary);
-  font-weight: 400;
-  padding: 0;
-  margin: 0;
   width: 100%;
+  border: none !important;
+  outline: none !important;
+  background: none !important;
+  background-color: transparent !important;
+  font-size: 16px;
+  color: white;
+  font-weight: 400;
+  padding: 12px 0 12px 32px;
+  margin: 0;
+  font-family: inherit;
+  box-shadow: none !important;
 }
 
 .search-input::placeholder {
-  color: var(--text-placeholder);
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
 }
 
-.filter-button {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: var(--space-xs);
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: var(--space-sm);
-}
-
-.filter-button:hover {
-  color: var(--primary-color);
-  background: rgba(0, 122, 255, 0.1);
-}
-
-/* Acciones rápidas */
+/* Acciones rápidas - 3 botones en una fila */
 .quick-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 8px;
   margin-bottom: var(--space-lg);
-  padding: 0 var(--space-xs);
+  padding: 0;
 }
 
 .quick-action-btn {
@@ -353,6 +318,7 @@ body {
   color: var(--text-primary);
   min-height: 70px;
   justify-content: center;
+  flex: 1;
 }
 
 .quick-action-btn:hover {
@@ -465,7 +431,7 @@ body[data-theme="dark"] .favorites-toggle.active {
 }
 
 /* Estilos responsivos para pantallas pequeñas */
-@media (max-width: 428px) {
+@media (max-width: 768px) {
   .modern-header {
     padding: var(--space-md);
   }
@@ -487,23 +453,13 @@ body[data-theme="dark"] .favorites-toggle.active {
     font-size: 16px;
   }
   
-  .search-bar {
-    padding: var(--space-sm) var(--space-md);
-    min-height: 44px;
-  }
-  
   .search-icon {
     width: 18px;
     height: 18px;
   }
   
-  .filter-button {
-    width: 28px;
-    height: 28px;
-  }
-  
   .quick-actions {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
     gap: var(--space-xs);
     padding: 0;
   }
@@ -517,14 +473,9 @@ body[data-theme="dark"] .favorites-toggle.active {
     font-size: 11px;
   }
   
-  .pets-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-sm);
-    padding: 0;
-  }
   
   .pet-image-container {
-    height: 220px;
+    height: 280px;
   }
   
   .pet-info {
@@ -550,23 +501,34 @@ body[data-theme="dark"] .favorites-toggle.active {
 
 /* Grid de mascotas moderno */
 .pets-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
   gap: var(--space-md);
   margin-bottom: var(--space-lg);
   padding: 0;
 }
 
+/* Asegurar grid en móvil */
+@media (max-width: 767px) {
+  .pets-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-md) !important;
+  }
+}
+
+/* Para tablets */
 @media (min-width: 768px) { 
   .pets-grid { 
-    grid-template-columns: repeat(3, 1fr); 
+    grid-template-columns: repeat(3, 1fr) !important; 
     gap: var(--space-lg); 
   } 
 }
 
+/* Para desktop */
 @media (min-width: 1024px) { 
   .pets-grid { 
-    grid-template-columns: repeat(4, 1fr); 
+    grid-template-columns: repeat(4, 1fr) !important; 
     gap: var(--space-lg); 
   } 
 }
@@ -604,10 +566,35 @@ body[data-theme="dark"] .favorites-toggle.active {
   box-shadow: var(--shadow-lg);
 }
 
+/* Asegurar que el texto de las cards sea blanco en modo oscuro */
+[data-theme="dark"] .pet-name {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .pet-details {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .pet-age {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .pet-location {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .owner-label {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .owner-name {
+  color: var(--text-secondary) !important;
+}
+
 /* Wrapper de imagen de mascota */
 .pet-image-wrapper {
   position: relative;
-  height: 200px;
+  height: 280px;
   width: 100%;
   overflow: hidden;
   flex-shrink: 0;
@@ -626,7 +613,7 @@ body[data-theme="dark"] .favorites-toggle.active {
   transition: transform var(--transition-slow);
   display: block;
   background: var(--bg-tertiary);
-  min-height: 200px;
+  min-height: 280px;
   min-width: 100%;
 }
 
@@ -670,6 +657,22 @@ body[data-theme="dark"] .favorites-toggle.active {
   color: var(--text-tertiary);
 }
 
+/* Asegurar que el botón de favoritos tenga colores correctos en modo oscuro */
+[data-theme="dark"] .favorite-btn {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .favorite-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .favorite-btn.favorited {
+  color: var(--accent-color);
+  background: var(--bg-card);
+}
+
 /* Badge de tipo de mascota */
 .pet-type-badge {
   position: absolute;
@@ -677,14 +680,22 @@ body[data-theme="dark"] .favorites-toggle.active {
   left: var(--space-sm);
   background: var(--primary-color);
   color: var(--text-inverse);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   box-shadow: var(--shadow-sm);
   z-index: 2;
+  white-space: nowrap;
+  max-width: fit-content;
+}
+
+/* Asegurar que el badge tenga colores correctos en modo oscuro */
+[data-theme="dark"] .pet-type-badge {
+  background: var(--primary-color);
+  color: var(--text-inverse);
 }
 
 /* Contenido de la mascota */

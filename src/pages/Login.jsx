@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../firebase/auth.js";
 import "../styles/App.css";
+import "../styles/Auth.css";
 import NavBar from "../components/navbar.jsx";
 
 function Login() {
@@ -29,60 +30,61 @@ function Login() {
   };
 
   return (
-    <div className="container">
-      <header>
-        <h2 className="logo-text">ANIMALS</h2>
-        <h1>Iniciar sesión</h1>
+    <div className="auth-container">
+      <header className="auth-header">
+        <h2 className="auth-logo">ANIMALS</h2>
+        <h1 className="auth-title">¡Bienvenido de vuelta!</h1>
+        <p className="auth-subtitle">Inicia sesión para continuar</p>
       </header>
-      <main>
-        <form onSubmit={handleLogin} className="upload-form" style={{ margin: '0 auto' }}>
+      
+      <div className="auth-form-container">
+        <form onSubmit={handleLogin} className="auth-form">
           {error && (
-            <div style={{ 
-              color: 'red', 
-              textAlign: 'center', 
-              marginBottom: '16px',
-              padding: '8px',
-              backgroundColor: '#ffe6e6',
-              borderRadius: '4px'
-            }}>
+            <div className="error-message">
               {error}
             </div>
           )}
+          
           <div className="form-group">
-            <label>Correo</label>
+            <label className="form-label">Correo electrónico</label>
             <input 
               type="email" 
+              className="form-input"
               value={email} 
               onChange={(e)=>setEmail(e.target.value)} 
-              placeholder="correo@ejemplo.com" 
+              placeholder="tu@correo.com" 
               required
               disabled={loading}
             />
           </div>
+          
           <div className="form-group">
-            <label>Contraseña</label>
+            <label className="form-label">Contraseña</label>
             <input 
               type="password" 
+              className="form-input"
               value={password} 
               onChange={(e)=>setPassword(e.target.value)} 
-              placeholder="********" 
+              placeholder="••••••••" 
               required
               disabled={loading}
             />
           </div>
+          
           <button 
-            className="save-button" 
+            className={`auth-button ${loading ? 'loading' : ''}`}
             type="submit" 
             disabled={loading}
-            style={{ opacity: loading ? 0.7 : 1 }}
           >
-            {loading ? 'Iniciando sesión...' : 'Entrar'}
+            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
-          <p style={{ marginTop: 12, textAlign: 'center' }}>
-            ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
-          </p>
+          
+          <div className="auth-link">
+            ¿No tienes cuenta? <Link to="/register">Crear cuenta</Link>
+          </div>
         </form>
-      </main>
+      </div>
+      
       <NavBar />
     </div>
   );

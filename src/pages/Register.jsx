@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../firebase/auth.js";
 import "../styles/App.css";
+import "../styles/Auth.css";
 import NavBar from "../components/navbar.jsx";
 
 function Register() {
@@ -56,106 +57,125 @@ function Register() {
   };
 
   return (
-    <div className="container">
-      <header>
-        <h2 className="logo-text">ANIMALS</h2>
-        <h1>Registrarse</h1>
+    <div className="auth-container">
+      <header className="auth-header">
+        <h2 className="auth-logo">ANIMALS</h2>
+        <h1 className="auth-title">¡Únete a nosotros!</h1>
+        <p className="auth-subtitle">Crea tu cuenta para comenzar</p>
       </header>
-      <main>
-        <form onSubmit={handleRegister} className="upload-form" style={{ margin: '0 auto' }}>
+      
+      <div className="auth-form-container">
+        <form onSubmit={handleRegister} className="auth-form">
           {error && (
-            <div style={{ 
-              color: 'red', 
-              textAlign: 'center', 
-              marginBottom: '16px',
-              padding: '8px',
-              backgroundColor: '#ffe6e6',
-              borderRadius: '4px'
-            }}>
+            <div className="error-message">
               {error}
             </div>
           )}
+          
           <div className="form-group">
-            <label>Nombre</label>
+            <label className="form-label">Nombre completo</label>
             <input 
               type="text" 
+              className="form-input"
               value={formData.name} 
               onChange={(e)=>handleChange('name', e.target.value)} 
+              placeholder="Tu nombre completo"
               required
               disabled={loading}
             />
           </div>
+          
           <div className="form-group">
-            <label>Correo</label>
+            <label className="form-label">Correo electrónico</label>
             <input 
               type="email" 
+              className="form-input"
               value={formData.email} 
               onChange={(e)=>handleChange('email', e.target.value)} 
+              placeholder="tu@correo.com"
               required
               disabled={loading}
             />
           </div>
+          
           <div className="form-group">
-            <label>Contraseña</label>
+            <label className="form-label">Contraseña</label>
             <input 
               type="password" 
+              className="form-input"
               value={formData.password} 
               onChange={(e)=>handleChange('password', e.target.value)} 
+              placeholder="••••••••"
               required
               disabled={loading}
             />
           </div>
+          
           <div className="form-group">
-            <label>Confirmar Contraseña</label>
+            <label className="form-label">Confirmar contraseña</label>
             <input 
               type="password" 
+              className="form-input"
               value={formData.confirmPassword} 
               onChange={(e)=>handleChange('confirmPassword', e.target.value)} 
+              placeholder="••••••••"
               required
               disabled={loading}
             />
           </div>
+          
           <div className="form-group">
-            <label>Teléfono</label>
+            <label className="form-label">Teléfono (opcional)</label>
             <input 
               type="tel" 
+              className="form-input"
               value={formData.phone} 
               onChange={(e)=>handleChange('phone', e.target.value)} 
+              placeholder="+506 0000-0000"
               disabled={loading}
             />
           </div>
+          
           <div className="form-group">
-            <label>Dirección</label>
+            <label className="form-label">Dirección (opcional)</label>
             <input 
               type="text" 
+              className="form-input"
               value={formData.address} 
               onChange={(e)=>handleChange('address', e.target.value)} 
+              placeholder="Tu dirección"
               disabled={loading}
             />
           </div>
-          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          
+          <div className="checkbox-group">
             <input 
               type="checkbox" 
+              className="checkbox-input"
               id="isShelter"
               checked={formData.isShelter} 
               onChange={(e)=>handleChange('isShelter', e.target.checked)}
               disabled={loading}
             />
-            <label htmlFor="isShelter">¿Eres un refugio?</label>
+            <label className="checkbox-label" htmlFor="isShelter">
+              ¿Eres un refugio de animales?
+            </label>
           </div>
+          
           <button 
-            className="save-button" 
+            className={`auth-button ${loading ? 'loading' : ''}`}
             type="submit" 
             disabled={loading}
-            style={{ opacity: loading ? 0.7 : 1 }}
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
-          <p style={{ marginTop: 12, textAlign: 'center' }}>
-            ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
-          </p>
+          
+          <div className="auth-link">
+            ¿Ya tienes cuenta? <Link to="/login">Iniciar sesión</Link>
+          </div>
         </form>
-      </main>
+      </div>
+      
       <NavBar />
     </div>
   );

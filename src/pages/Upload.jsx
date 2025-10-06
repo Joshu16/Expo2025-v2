@@ -125,94 +125,83 @@ function Upload({ user }) {
   };
 
   return (
-    <div className="container">
-      <header>
-        <div className="header-content">
-          <span className="bone-icon">🦴</span>
-          <h2 className="logo-text">ANIMALS</h2>
-        </div>
+    <div className="upload-container">
+      <div className="upload-header">
         <h1 className="upload-title">
-          Da a conocer una mascota que quieres dar en adopción
+          <span className="upload-icon">🐾</span>
+          Subir Mascota
         </h1>
-        <p className="upload-description">
-          Este es el primer paso para conseguirle un amigo a alguien más, sigue los procesos indicados!
+        <p className="upload-subtitle">
+          Comparte los detalles de tu mascota para encontrarle un hogar
         </p>
-      </header>
+      </div>
 
-      <main className="upload-main">
-        <div className="upload-section">
-          <div className="upload-box">
+      <div className="upload-content">
+        {/* Image Upload Section */}
+        <div className="image-upload-section">
+          <div className="image-upload-area">
             <input
               type="file"
               id="file-upload"
               accept="image/*"
               onChange={handleFileSelect}
-              style={{ display: 'none' }}
+              className="file-input"
             />
-            <label htmlFor="file-upload" className="upload-label">
-              <div className="upload-icon" aria-hidden="true">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 5a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2H4zm3 9l3-4 2 3 3-4 4 5H7z"/>
-                </svg>
-              </div>
-              <span className="upload-text">
-                {selectedFile ? selectedFile.name : "Seleccionar archivo"}
-              </span>
+            <label htmlFor="file-upload" className="image-upload-label">
+              {previewUrl ? (
+                <div className="image-preview">
+                  <img src={previewUrl} alt="Preview" />
+                  <div className="image-overlay">
+                    <span className="change-text">Cambiar imagen</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="upload-placeholder">
+                  <div className="upload-icon-large">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M4 5a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2H4zm3 9l3-4 2 3 3-4 4 5H7z"/>
+                    </svg>
+                  </div>
+                  <p className="upload-text">Toca para subir una foto</p>
+                  <p className="upload-hint">JPG, PNG o GIF</p>
+                </div>
+              )}
             </label>
           </div>
 
-          <div className="upload-separator">o pega un enlace de imagen</div>
-          <div className="form-group" style={{ maxWidth: 500, margin: '0 auto' }}>
-            <input 
-              type="url" 
-              placeholder="https://ejemplo.com/imagen.jpg" 
-              value={imageUrl} 
-              onChange={(e)=>handleUrlChange(e.target.value)}
-              style={{ textAlign: 'center' }}
-            />
-            <small style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>
-              💡 Recomendado: Usa enlaces de imágenes de Unsplash, Imgur, o Google Drive
-            </small>
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div className="url-input-section">
+            <div className="input-with-icon">
+              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10.59 13.41c.41.39.41 1.03 0 1.42-.39.39-1.03.39-1.42 0a5.003 5.003 0 0 1 0-7.07l3.54-3.54a5.003 5.003 0 0 1 7.07 0 5.003 5.003 0 0 1 0 7.07l-1.49 1.49c.01-.82-.12-1.64-.4-2.42l.47-.48a2.982 2.982 0 0 0 0-4.24 2.982 2.982 0 0 0-4.24 0l-3.53 3.53a2.982 2.982 0 0 0 0 4.24zm2.82-4.24c.39-.39 1.03-.39 1.42 0a5.003 5.003 0 0 1 0 7.07l-3.54 3.54a5.003 5.003 0 0 1-7.07 0 5.003 5.003 0 0 1 0-7.07l1.49-1.49c-.01.82.12 1.64.4 2.42l-.47.48a2.982 2.982 0 0 0 0 4.24 2.982 2.982 0 0 0 4.24 0l3.53-3.53a2.982 2.982 0 0 0 0-4.24z"/>
+              </svg>
+              <input 
+                type="url" 
+                placeholder="O pega un enlace de imagen" 
+                value={imageUrl} 
+                onChange={(e) => handleUrlChange(e.target.value)}
+                className="url-input"
+              />
+            </div>
+            
+            <div className="quick-actions">
               <button 
                 type="button"
                 onClick={() => setImageUrl('https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop')}
-                style={{ 
-                  fontSize: '0.75rem', 
-                  padding: '0.25rem 0.5rem', 
-                  background: '#f3f4f6', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer'
-                }}
+                className="quick-btn"
               >
                 🐕 Perro
               </button>
               <button 
                 type="button"
                 onClick={() => setImageUrl('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=400&auto=format&fit=crop')}
-                style={{ 
-                  fontSize: '0.75rem', 
-                  padding: '0.25rem 0.5rem', 
-                  background: '#f3f4f6', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer'
-                }}
+                className="quick-btn"
               >
                 🐱 Gato
               </button>
               <button 
                 type="button"
                 onClick={() => setImageUrl('https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=400&auto=format&fit=crop')}
-                style={{ 
-                  fontSize: '0.75rem', 
-                  padding: '0.25rem 0.5rem', 
-                  background: '#f3f4f6', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer'
-                }}
+                className="quick-btn"
               >
                 🐰 Conejo
               </button>
@@ -220,151 +209,167 @@ function Upload({ user }) {
           </div>
         </div>
 
-        {previewUrl && (
-          <div className="upload-preview" style={{ marginTop: 16 }}>
-            <img src={previewUrl} alt="preview" style={{ width: '100%', borderRadius: 12 }} />
-          </div>
-        )}
-
-        <div className="upload-form" style={{ marginTop: 16 }}>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Nombre *</label>
+        {/* Form Section */}
+        <div className="form-section">
+          <div className="form-grid">
+            <div className="form-field">
+              <label className="field-label">Nombre *</label>
               <input 
                 type="text" 
                 value={petData.name} 
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Nombre de la mascota"
+                className="field-input"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>Tipo de mascota *</label>
+            <div className="form-field">
+              <label className="field-label">Tipo *</label>
               <select 
                 value={petData.type} 
                 onChange={(e) => handleInputChange('type', e.target.value)}
+                className="field-select"
                 required
               >
-                <option value="">Selecciona un tipo</option>
-                <option value="Perro">Perro</option>
-                <option value="Gato">Gato</option>
-                <option value="Conejo">Conejo</option>
-                <option value="Erizo">Erizo</option>
-                <option value="Hamster">Hamster</option>
-                <option value="Loro">Loro</option>
-                <option value="Otro">Otro</option>
+                <option value="">Selecciona tipo</option>
+                <option value="Perro">🐕 Perro</option>
+                <option value="Gato">🐱 Gato</option>
+                <option value="Conejo">🐰 Conejo</option>
+                <option value="Erizo">🦔 Erizo</option>
+                <option value="Hamster">🐹 Hamster</option>
+                <option value="Loro">🦜 Loro</option>
+                <option value="Otro">🐾 Otro</option>
               </select>
             </div>
-          </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Ubicación *</label>
+            <div className="form-field">
+              <label className="field-label">Ubicación *</label>
               <input 
                 type="text" 
                 value={petData.location} 
                 onChange={(e) => handleInputChange('location', e.target.value)}
                 placeholder="Ciudad, Estado"
+                className="field-input"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>Raza</label>
+            <div className="form-field">
+              <label className="field-label">Raza</label>
               <input 
                 type="text" 
                 value={petData.breed} 
                 onChange={(e) => handleInputChange('breed', e.target.value)}
                 placeholder="Raza o mezcla"
+                className="field-input"
               />
             </div>
-          </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Género</label>
-              <select value={petData.gender} onChange={(e) => handleInputChange('gender', e.target.value)}>
+            <div className="form-field">
+              <label className="field-label">Género</label>
+              <select 
+                value={petData.gender} 
+                onChange={(e) => handleInputChange('gender', e.target.value)}
+                className="field-select"
+              >
                 <option value="">Selecciona</option>
-                <option value="Macho">Macho</option>
-                <option value="Hembra">Hembra</option>
+                <option value="Macho">♂️ Macho</option>
+                <option value="Hembra">♀️ Hembra</option>
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Edad</label>
+            <div className="form-field">
+              <label className="field-label">Edad</label>
               <input 
                 type="text" 
                 value={petData.age} 
                 onChange={(e) => handleInputChange('age', e.target.value)}
-                placeholder="Ej: 2 años, 6 meses"
+                placeholder="Ej: 2 años"
+                className="field-input"
               />
+            </div>
+
+            <div className="form-field">
+              <label className="field-label">Tamaño</label>
+              <select 
+                value={petData.size} 
+                onChange={(e) => handleInputChange('size', e.target.value)}
+                className="field-select"
+              >
+                <option value="">Selecciona</option>
+                <option value="Pequeño">S Pequeño</option>
+                <option value="Mediano">M Mediano</option>
+                <option value="Grande">L Grande</option>
+              </select>
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Tamaño</label>
-            <select value={petData.size} onChange={(e) => handleInputChange('size', e.target.value)}>
-              <option value="">Selecciona</option>
-              <option value="Pequeño">Pequeño</option>
-              <option value="Mediano">Mediano</option>
-              <option value="Grande">Grande</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Descripción</label>
+          <div className="form-field full-width">
+            <label className="field-label">Descripción</label>
             <textarea 
               value={petData.description} 
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Cuéntanos sobre la personalidad, comportamiento y características especiales de la mascota..."
+              placeholder="Cuéntanos sobre su personalidad y comportamiento..."
+              className="field-textarea"
               rows="3"
             />
           </div>
 
-          <div className="form-group">
-            <label>Necesidades especiales</label>
+          <div className="form-field full-width">
+            <label className="field-label">Necesidades especiales</label>
             <textarea 
               value={petData.specialNeeds} 
               onChange={(e) => handleInputChange('specialNeeds', e.target.value)}
-              placeholder="Menciona si tiene alguna condición especial, medicamentos, cuidados especiales, etc."
+              placeholder="Medicamentos, cuidados especiales, etc."
+              className="field-textarea"
               rows="2"
             />
           </div>
 
-
-          <div className="form-group">
-            <label className="checkbox-label">
+          <div className="checkbox-section">
+            <label className="checkbox-item">
               <input 
                 type="checkbox" 
                 checked={petData.vaccinated} 
                 onChange={(e) => handleInputChange('vaccinated', e.target.checked)}
+                className="checkbox-input"
               />
-              <span>Está vacunado</span>
+              <span className="checkbox-custom"></span>
+              <span className="checkbox-text">Está vacunado</span>
             </label>
-          </div>
 
-          <div className="form-group">
-            <label className="checkbox-label">
+            <label className="checkbox-item">
               <input 
                 type="checkbox" 
                 checked={petData.sterilized} 
                 onChange={(e) => handleInputChange('sterilized', e.target.checked)}
+                className="checkbox-input"
               />
-              <span>Está esterilizado/castrado</span>
+              <span className="checkbox-custom"></span>
+              <span className="checkbox-text">Está esterilizado</span>
             </label>
           </div>
 
           <button 
-            className="save-button" 
-            style={{ marginTop: 12, opacity: loading ? 0.7 : 1 }} 
+            className="submit-button" 
             onClick={handleSavePet}
             disabled={loading}
           >
-            {loading ? 'Guardando...' : 'Guardar mascota'}
+            {loading ? (
+              <>
+                <div className="loading-spinner"></div>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <span>💾</span>
+                Guardar mascota
+              </>
+            )}
           </button>
         </div>
-      </main>
+      </div>
 
       <NavBar />
     </div>
