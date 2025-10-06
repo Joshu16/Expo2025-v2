@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { userService, petService, favoriteService } from "../firebase/services.js";
+import { userService, petService, favoriteService, shelterService } from "../firebase/services.js";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
 
@@ -13,10 +13,20 @@ function Home({ user }) {
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [shelters, setShelters] = useState([]);
+  const [showOnlyShelters, setShowOnlyShelters] = useState(false);
+  const [userShelters, setUserShelters] = useState([]);
+  const [userType, setUserType] = useState('user'); // 'user', 'shelter', 'premium'
 
   // Si venimos de Categories, obtenemos la categoría seleccionada
   const categoryFilter = location.state?.category || "";
 
+  // Aplicar tema al cargar
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.body.setAttribute('data-theme', savedTheme);
+  }, []);
 
   // Función para cargar favoritos del usuario
   const loadFavorites = async () => {
@@ -41,6 +51,48 @@ function Home({ user }) {
       console.log('Favorites loaded:', enrichedFavorites);
     } catch (error) {
       console.error('Error loading favorites:', error);
+    }
+  };
+
+  // Función para cargar refugios
+  const loadShelters = async () => {
+    try {
+      console.log('Loading shelters...');
+      const [premiumShelters, regularShelters] = await Promise.all([
+        shelterService.getPremiumShelters(),
+        shelterService.getRegularShelters()
+      ]);
+      
+      // Mostrar premium primero, luego regulares
+      const allShelters = [...premiumShelters, ...regularShelters];
+      setShelters(allShelters);
+      console.log('Shelters loaded:', allShelters);
+    } catch (error) {
+      console.error('Error loading shelters:', error);
+    }
+  };
+
+  // Función para cargar refugios del usuario
+  const loadUserShelters = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      console.log('Loading user shelters...');
+      const userSheltersData = await shelterService.getSheltersByOwner(user.uid);
+      setUserShelters(userSheltersData);
+      
+      // Determinar tipo de usuario basado en sus refugios
+      if (userSheltersData.length > 0) {
+        const hasPremium = userSheltersData.some(shelter => shelter.isPremium);
+        setUserType(hasPremium ? 'premium' : 'shelter');
+      } else {
+        setUserType('user');
+      }
+      
+      console.log('User shelters loaded:', userSheltersData);
+      console.log('User type determined:', userType);
+    } catch (error) {
+      console.error('Error loading user shelters:', error);
     }
   };
 
@@ -74,6 +126,12 @@ function Home({ user }) {
 
           // Cargar favoritos
           await loadFavorites();
+          
+          // Cargar refugios
+          await loadShelters();
+          
+          // Cargar refugios del usuario para determinar tipo
+          await loadUserShelters();
 
           // Cargar mascotas
           const petsData = await petService.getPets();
@@ -120,10 +178,13 @@ function Home({ user }) {
           setLoading(false);
         }
       } else {
-        // Si no hay usuario, cargar mascotas desde Firebase
+        // Si no hay usuario, cargar mascotas y refugios desde Firebase
         try {
           const petsData = await petService.getPets();
           setPets(petsData);
+          
+          // Cargar refugios también para usuarios no autenticados
+          await loadShelters();
         } catch (error) {
           console.error("Error loading pets:", error);
           // Fallback a mascotas estáticas si hay error
@@ -180,6 +241,18 @@ function Home({ user }) {
       return matchesCategory && matchesSearch;
     });
   }, [pets, search, categoryFilter, showOnlyFavorites, favorites, user]);
+
+  // Filtro para refugios
+  const filteredShelters = useMemo(() => {
+    if (showOnlyShelters) {
+      return shelters.filter(shelter =>
+        shelter.name.toLowerCase().includes(search.toLowerCase()) ||
+        shelter.location.toLowerCase().includes(search.toLowerCase()) ||
+        shelter.description.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    return [];
+  }, [shelters, search, showOnlyShelters]);
 
   const handleSearchClick = () => {
     navigate("/categories");
@@ -341,11 +414,11 @@ function Home({ user }) {
           )}
         </div>
 
-        <div className="pets-grid">
+        <div className={`pets-grid ${userType === 'user' ? 'single-column' : userType === 'shelter' ? 'two-columns' : 'premium-layout'}`}>
           {filteredPets.map((pet, index) => (
             <div
               key={index}
-              className="pet-card"
+              className={`pet-card ${userType === 'premium' && index < 2 ? 'featured' : ''}`}
               onClick={() => handleCardClick(pet)}
             >
               <div className="pet-image-wrapper">
@@ -388,6 +461,67 @@ function Home({ user }) {
               Explorar categorías
             </button>
           </div>
+        )}
+
+        {/* Sección de Refugios */}
+        {shelters.length > 0 && (
+          <section className="shelters-section">
+            <div className="section-header">
+              <div className="section-title-row">
+                <h2 className="section-title">
+                  {showOnlyShelters ? 'Refugios' : 'Refugios destacados'}
+                </h2>
+                <span className="pets-count">{shelters.length} refugios</span>
+              </div>
+              <div className="shelters-controls">
+                <button 
+                  className={`shelters-toggle ${showOnlyShelters ? 'active' : ''}`}
+                  onClick={() => setShowOnlyShelters(!showOnlyShelters)}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                  </svg>
+                  {showOnlyShelters ? 'Ver mascotas' : 'Solo refugios'}
+                </button>
+                <button 
+                  className="view-all-shelters"
+                  onClick={() => navigate('/shelters')}
+                >
+                  Ver todos
+                </button>
+              </div>
+            </div>
+
+            <div className="shelters-grid">
+              {(showOnlyShelters ? filteredShelters : shelters.slice(0, 4)).map((shelter, index) => (
+                <div
+                  key={shelter.id || index}
+                  className={`shelter-card ${shelter.isPremium ? 'premium' : ''}`}
+                  onClick={() => navigate('/shelters')}
+                >
+                  <div className="shelter-image-wrapper">
+                    <img 
+                      src={shelter.image || '/default-shelter.jpg'} 
+                      alt={shelter.name} 
+                      className="shelter-image" 
+                    />
+                    {shelter.isPremium && (
+                      <div className="premium-badge">⭐ Premium</div>
+                    )}
+                  </div>
+                  <div className="shelter-content">
+                    <h3 className="shelter-name">{shelter.name}</h3>
+                    <p className="shelter-location">📍 {shelter.location}</p>
+                    <p className="shelter-description">{shelter.description}</p>
+                    <div className="shelter-meta">
+                      <span className="rating">⭐ {shelter.rating || 'N/A'}</span>
+                      <span className="pets-count">🐾 {shelter.petsCount || 0} mascotas</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </main>
 

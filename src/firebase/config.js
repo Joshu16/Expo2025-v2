@@ -7,13 +7,12 @@ import { getStorage } from 'firebase/storage';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBZ28tY4uu7Ec0pou2vQl9PlEiqU0IFc4U",
-  authDomain: "animals-adoption-app.firebaseapp.com",
-  projectId: "animals-adoption-app",
-  storageBucket: "animals-adoption-app.firebasestorage.app",
-  messagingSenderId: "360360840693",
-  appId: "1:360360840693:web:f81ab7be2be926eca5a4bc",
-  measurementId: "G-HDDQLXGS7R"
+  apiKey: "AIzaSyBnil9YV9LpAVA4GLUjoPoq7PSgq3DYYgk",
+  authDomain: "animals-adoption-app-v2.firebaseapp.com",
+  projectId: "animals-adoption-app-v2",
+  storageBucket: "animals-adoption-app-v2.appspot.com",
+  messagingSenderId: "702758490735",
+  appId: "1:702758490735:web:animals-adoption-app-v2"
 };
 
 // Initialize Firebase

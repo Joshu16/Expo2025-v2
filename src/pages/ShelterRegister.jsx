@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/App.css";
 import "../styles/ShelterRegister.css";
 import NavBar from "../components/navbar.jsx";
+import PremiumModal from "../components/PremiumModal.jsx";
+import { shelterService, userService } from "../firebase/services.js";
+import { useAuth } from "../firebase/auth.js";
 
 function ShelterRegister() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -20,6 +24,45 @@ function ShelterRegister() {
   });
   const [selectedServices, setSelectedServices] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [selectedShelterForPremium, setSelectedShelterForPremium] = useState(null);
+
+  // Cargar datos del usuario automáticamente
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    } else {
+      // Si no hay usuario, redirigir al login
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  const loadUserData = async () => {
+    try {
+      const userProfile = await userService.getUserProfile(user.uid);
+      if (userProfile) {
+        setFormData(prev => ({
+          ...prev,
+          name: userProfile.name ? `${userProfile.name} - Refugio` : "Mi Refugio",
+          email: userProfile.email || user.email || "",
+          phone: userProfile.phone || "",
+          address: userProfile.address || "",
+          location: userProfile.address || "Costa Rica"
+        }));
+      } else {
+        // Si no hay perfil, usar datos básicos del usuario
+        setFormData(prev => ({
+          ...prev,
+          name: user.displayName ? `${user.displayName} - Refugio` : "Mi Refugio",
+          email: user.email || "",
+          location: "Costa Rica"
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
 
   const availableServices = [
     "Adopción",
@@ -51,33 +94,55 @@ function ShelterRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    // Simular envío
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    setError("");
 
     try {
-      const newShelter = {
-        id: Date.now(),
+      const shelterData = {
         ...formData,
         services: selectedServices,
+        ownerId: user?.uid || 'anonymous',
+        ownerName: user?.displayName || user?.email || 'Usuario Anónimo',
         rating: 0,
         petsCount: 0,
         verified: false,
-        createdAt: new Date().toISOString()
+        isPremium: false,
+        status: 'approved'
       };
 
-      const existingShelters = JSON.parse(localStorage.getItem("shelters") || "[]");
-      const updatedShelters = [newShelter, ...existingShelters];
-      localStorage.setItem("shelters", JSON.stringify(updatedShelters));
+      console.log('Creating shelter with data:', shelterData);
+      const shelterId = await shelterService.createShelter(shelterData);
+      console.log('Shelter created with ID:', shelterId);
 
-      alert("Refugio registrado exitosamente. Será revisado por nuestro equipo.");
-      navigate("/shelters");
+      // Mostrar modal de premium después del registro
+      setShowPremiumModal(true);
+      setSelectedShelterForPremium(shelterId);
+      
+      // Recargar la página para mostrar el refugio en el perfil
+      setTimeout(() => {
+        window.location.href = '/profile';
+      }, 2000);
     } catch (error) {
-      console.error("Error saving shelter", error);
-      alert("Error al registrar el refugio. Inténtalo de nuevo.");
+      console.error("Error creating shelter", error);
+      setError("Error al registrar el refugio. Inténtalo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePremiumSuccess = () => {
+    setShowPremiumModal(false);
+    setSelectedShelterForPremium(null);
+    alert("¡Refugio registrado exitosamente! Ahora tienes acceso premium.");
+    // Redirigir al perfil para ver el refugio creado
+    navigate("/profile");
+  };
+
+  const handlePremiumClose = () => {
+    setShowPremiumModal(false);
+    setSelectedShelterForPremium(null);
+    alert("Refugio registrado exitosamente. Puedes actualizar a premium más tarde desde la página de refugios.");
+    // Redirigir al perfil para ver el refugio creado
+    navigate("/profile");
   };
 
   return (
@@ -94,6 +159,20 @@ function ShelterRegister() {
       </header>
 
       <main className="shelter-register-main">
+        {!user && (
+          <div className="info-message">
+            <span>ℹ️</span>
+            <span>Puedes registrar un refugio sin iniciar sesión. Si tienes cuenta, inicia sesión para gestionar mejor tu refugio.</span>
+          </div>
+        )}
+        
+        {error && (
+          <div className="error-message">
+            <span>⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="shelter-form">
           {/* Información básica */}
           <div className="form-section">
@@ -141,50 +220,35 @@ function ShelterRegister() {
           <div className="form-section">
             <h3>Información de Contacto</h3>
             
-            <div className="form-row">
-              <div className="form-group">
-                <label>Ciudad/Provincia *</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
-                  placeholder="Ej: San José, Costa Rica"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Dirección *</label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  placeholder="Dirección completa"
-                  required
-                />
-              </div>
+            <div className="form-group">
+              <label>Ubicación *</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => handleInputChange("location", e.target.value)}
+                placeholder="Ej: San José, Costa Rica"
+                required
+              />
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label>Teléfono *</label>
+                <label>Teléfono</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   placeholder="+506 2222-3333"
-                  required
                 />
               </div>
 
               <div className="form-group">
-                <label>Email *</label>
+                <label>Email</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   placeholder="contacto@refugio.com"
-                  required
                 />
               </div>
             </div>
@@ -268,6 +332,15 @@ function ShelterRegister() {
       </main>
 
       <NavBar />
+      
+      {/* Modal Premium */}
+      <PremiumModal
+        isOpen={showPremiumModal}
+        onClose={handlePremiumClose}
+        shelterId={selectedShelterForPremium}
+        shelterName={formData.name}
+        onSuccess={handlePremiumSuccess}
+      />
     </div>
   );
 }

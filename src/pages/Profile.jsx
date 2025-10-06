@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { userService, petService, favoriteService } from "../firebase/services.js";
+import { userService, petService, favoriteService, shelterService } from "../firebase/services.js";
 import { useAuth } from "../firebase/auth.js";
 import "../styles/App.css";
 import "../styles/Profile.css";
@@ -13,6 +13,7 @@ function Profile({ user }) {
   const [userProfile, setUserProfile] = useState({ name: "", address: "", phone: "", email: "" });
   const [myPets, setMyPets] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [myShelters, setMyShelters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editingPet, setEditingPet] = useState(null);
@@ -62,6 +63,12 @@ function Profile({ user }) {
       const favoritesData = await favoriteService.getFavorites(user.uid);
       console.log('Profile: Favorites data received:', favoritesData);
       setFavorites(favoritesData);
+
+      // Cargar refugios del usuario
+      console.log('Profile: Loading shelters...');
+      const sheltersData = await shelterService.getSheltersByOwner(user.uid);
+      console.log('Profile: Shelters data received:', sheltersData);
+      setMyShelters(sheltersData);
 
         } catch (error) {
       console.error("Profile: Error loading user data:", error);
@@ -273,6 +280,12 @@ function Profile({ user }) {
           >
             Favoritas
           </button>
+          <button 
+            className={`tab-button ${activeTab === 'shelters' ? 'active' : ''}`}
+            onClick={() => setActiveTab('shelters')}
+          >
+            Mis Refugios
+          </button>
         </div>
 
         {/* Contenido de las pestañas */}
@@ -353,6 +366,89 @@ function Profile({ user }) {
                         <div className="pet-meta">
                           <span className="pet-age">{fav.pet?.age}</span>
                           <span className="pet-location">📍 {fav.pet?.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'shelters' && (
+            <div className="shelters-section">
+              <div className="section-header">
+                <h3>Mis Refugios ({myShelters.length})</h3>
+                <div className="section-actions">
+                  <button 
+                    className="refresh-button"
+                    onClick={loadUserData}
+                    disabled={loading}
+                  >
+                    🔄 Actualizar
+                  </button>
+                  <button 
+                    className="add-button"
+                    onClick={() => navigate('/shelter-register')}
+                  >
+                    ➕ Registrar Refugio
+                  </button>
+                </div>
+              </div>
+
+              {myShelters.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">🏠</div>
+                  <h3>No tienes refugios registrados</h3>
+                  <p>Registra tu refugio para comenzar a gestionar mascotas</p>
+                  <button 
+                    className="primary-button"
+                    onClick={() => navigate('/shelter-register')}
+                  >
+                    Registrar Refugio
+                  </button>
+                </div>
+              ) : (
+                <div className="shelters-grid">
+                  {myShelters.map((shelter) => (
+                    <div key={shelter.id} className="shelter-card">
+                      <div className="shelter-image-wrapper">
+                        <img 
+                          src={shelter.image || '/default-shelter.jpg'} 
+                          alt={shelter.name} 
+                          className="shelter-image" 
+                        />
+                        {shelter.isPremium && (
+                          <div className="premium-badge">⭐ Premium</div>
+                        )}
+                        <div className="status-badge status-{shelter.status}">
+                          {shelter.status === 'active' ? 'Activo' : 
+                           shelter.status === 'pending' ? 'Pendiente' : 'Inactivo'}
+                        </div>
+                      </div>
+                      <div className="shelter-content">
+                        <h3 className="shelter-name">{shelter.name}</h3>
+                        <p className="shelter-location">📍 {shelter.location}</p>
+                        <p className="shelter-description">{shelter.description}</p>
+                        <div className="shelter-meta">
+                          <span className="rating">⭐ {shelter.rating || 'N/A'}</span>
+                          <span className="pets-count">🐾 {shelter.petsCount || 0} mascotas</span>
+                        </div>
+                        <div className="shelter-actions">
+                          <button 
+                            className="manage-button"
+                            onClick={() => navigate('/shelter-admin')}
+                          >
+                            Gestionar
+                          </button>
+                          {!shelter.isPremium && (
+                            <button 
+                              className="upgrade-button"
+                              onClick={() => navigate('/shelters')}
+                            >
+                              Actualizar a Premium
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

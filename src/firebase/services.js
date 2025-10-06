@@ -339,12 +339,11 @@ export const petService = {
     }
   },
 
-  // Obtener mascotas por dueño
+  // Obtener mascotas por dueño (sin orderBy para evitar índices)
   getPetsByOwner: async (ownerId) => {
     try {
       console.log('petService.getPetsByOwner called for ownerId:', ownerId);
       
-      // Primero intentar sin orderBy para debuggear
       const q = query(
         collection(db, 'pets'),
         where('ownerId', '==', ownerId)
@@ -354,32 +353,48 @@ export const petService = {
         id: doc.id,
         ...doc.data()
       }));
-      console.log('Pets found for owner (without orderBy):', pets);
       
-      // Si hay mascotas, intentar con orderBy
-      if (pets.length > 0) {
-        try {
-          const qOrdered = query(
-            collection(db, 'pets'),
-            where('ownerId', '==', ownerId),
-            orderBy('createdAt', 'desc')
-          );
-          const orderedSnapshot = await getDocs(qOrdered);
-          const orderedPets = orderedSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          console.log('Pets found for owner (with orderBy):', orderedPets);
-          return orderedPets;
-        } catch (orderError) {
-          console.log('OrderBy failed, returning unordered results:', orderError);
-          return pets;
-        }
-      }
+      // Ordenar manualmente por fecha de creación
+      pets.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
       
+      console.log('Pets found for owner:', pets);
       return pets;
     } catch (error) {
       console.error('Error getting pets by owner:', error);
+      return [];
+    }
+  },
+
+  // Obtener mascotas por refugio (sin orderBy para evitar índices)
+  getPetsByShelter: async (shelterId) => {
+    try {
+      console.log('petService.getPetsByShelter called for shelterId:', shelterId);
+      
+      const q = query(
+        collection(db, 'pets'),
+        where('shelterId', '==', shelterId)
+      );
+      const querySnapshot = await getDocs(q);
+      const pets = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Ordenar manualmente por fecha de creación
+      pets.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      console.log('Pets found for shelter:', pets);
+      return pets;
+    } catch (error) {
+      console.error('Error getting pets by shelter:', error);
       return [];
     }
   },
@@ -447,7 +462,9 @@ export const petService = {
         status: 'available',
         adoptionRequests: 0,
         ownerId: petData.ownerId || '',
-        ownerName: petData.ownerName || ''
+        ownerName: petData.ownerName || '',
+        shelterId: petData.shelterId || null,
+        shelterName: petData.shelterName || null
       });
 
       console.log('Pet created successfully with ID:', docRef.id);
@@ -984,6 +1001,299 @@ export const adoptionRequestService = {
       await adoptionRequestService.updateAdoptionRequestStatus(requestId, 'rejected', ownerNotes);
     } catch (error) {
       console.error('Error rejecting adoption request:', error);
+      throw error;
+    }
+  }
+};
+
+// Servicios para Refugios
+export const shelterService = {
+  // Obtener todos los refugios
+  getShelters: async () => {
+    try {
+      console.log('shelterService.getShelters called');
+      const querySnapshot = await getDocs(collection(db, 'shelters'));
+      const shelters = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      console.log('Shelters loaded from Firestore:', shelters);
+      return shelters;
+    } catch (error) {
+      console.error('Error getting shelters:', error);
+      return [];
+    }
+  },
+
+  // Obtener refugio por ID
+  getShelterById: async (shelterId) => {
+    try {
+      console.log('shelterService.getShelterById called for shelterId:', shelterId);
+      const docRef = doc(db, 'shelters', shelterId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const shelter = { id: docSnap.id, ...docSnap.data() };
+        console.log('Shelter loaded from Firestore:', shelter);
+        return shelter;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting shelter:', error);
+      return null;
+    }
+  },
+
+  // Obtener refugios por dueño (sin orderBy para evitar índices)
+  getSheltersByOwner: async (ownerId) => {
+    try {
+      console.log('shelterService.getSheltersByOwner called for ownerId:', ownerId);
+      const q = query(
+        collection(db, 'shelters'),
+        where('ownerId', '==', ownerId)
+      );
+      const querySnapshot = await getDocs(q);
+      const shelters = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Ordenar manualmente por fecha de creación
+      shelters.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      console.log('Shelters for owner loaded from Firestore:', shelters);
+      return shelters;
+    } catch (error) {
+      console.error('Error getting shelters by owner:', error);
+      return [];
+    }
+  },
+
+  // Crear nuevo refugio con validaciones básicas (SIN consultas a BD)
+  createShelter: async (shelterData) => {
+    try {
+      console.log('shelterService.createShelter called:', shelterData);
+      
+      // Validaciones básicas SIN consultar la base de datos
+      if (!shelterData.ownerId) {
+        throw new Error('❌ Error: ownerId es requerido para crear un refugio');
+      }
+      
+      if (!shelterData.name || shelterData.name.length < 3) {
+        throw new Error('❌ Error: Nombre del refugio debe tener al menos 3 caracteres');
+      }
+      
+      if (shelterData.name && shelterData.name.length > 100) {
+        throw new Error('❌ Error: Nombre del refugio no puede exceder 100 caracteres');
+      }
+      
+      // Validar que no contenga datos sospechosos
+      const suspiciousPatterns = [/<script/i, /javascript:/i, /on\w+\s*=/i, /eval\(/i];
+      const dataString = JSON.stringify(shelterData);
+      for (const pattern of suspiciousPatterns) {
+        if (pattern.test(dataString)) {
+          throw new Error('❌ Error: Datos contienen contenido sospechoso');
+        }
+      }
+      
+      const docRef = await addDoc(collection(db, 'shelters'), {
+        ...shelterData,
+        createdAt: new Date().toISOString(),
+        verified: false,
+        rating: 0,
+        petsCount: 0,
+        isPremium: false,
+        premiumExpiry: null,
+        status: 'pending' // pending, approved, rejected
+      });
+      console.log('✅ Shelter created with ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Error creating shelter:', error);
+      throw error;
+    }
+  },
+
+  // Actualizar refugio
+  updateShelter: async (shelterId, updateData) => {
+    try {
+      console.log('shelterService.updateShelter called for shelterId:', shelterId, 'updateData:', updateData);
+      await updateDoc(doc(db, 'shelters', shelterId), {
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      });
+      console.log('Shelter updated successfully');
+    } catch (error) {
+      console.error('Error updating shelter:', error);
+      throw error;
+    }
+  },
+
+  // Actualizar estado de verificación del refugio
+  updateShelterStatus: async (shelterId, status) => {
+    try {
+      console.log('shelterService.updateShelterStatus called for shelterId:', shelterId, 'status:', status);
+      await updateDoc(doc(db, 'shelters', shelterId), {
+        status,
+        updatedAt: new Date().toISOString()
+      });
+      console.log('Shelter status updated successfully');
+    } catch (error) {
+      console.error('Error updating shelter status:', error);
+      throw error;
+    }
+  },
+
+  // Activar suscripción premium
+  activatePremium: async (shelterId, months = 1) => {
+    try {
+      console.log('shelterService.activatePremium called for shelterId:', shelterId, 'months:', months);
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + months);
+      
+      await updateDoc(doc(db, 'shelters', shelterId), {
+        isPremium: true,
+        premiumExpiry: expiryDate.toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      console.log('Premium subscription activated successfully');
+    } catch (error) {
+      console.error('Error activating premium subscription:', error);
+      throw error;
+    }
+  },
+
+  // Desactivar suscripción premium
+  deactivatePremium: async (shelterId) => {
+    try {
+      console.log('shelterService.deactivatePremium called for shelterId:', shelterId);
+      await updateDoc(doc(db, 'shelters', shelterId), {
+        isPremium: false,
+        premiumExpiry: null,
+        updatedAt: new Date().toISOString()
+      });
+      console.log('Premium subscription deactivated successfully');
+    } catch (error) {
+      console.error('Error deactivating premium subscription:', error);
+      throw error;
+    }
+  },
+
+  // Verificar si un refugio tiene premium activo
+  isPremiumActive: async (shelterId) => {
+    try {
+      const shelter = await shelterService.getShelterById(shelterId);
+      if (!shelter) return false;
+      
+      if (!shelter.isPremium) return false;
+      
+      if (shelter.premiumExpiry) {
+        const expiryDate = new Date(shelter.premiumExpiry);
+        const now = new Date();
+        return expiryDate > now;
+      }
+      
+      return shelter.isPremium;
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+      return false;
+    }
+  },
+
+  // Obtener refugios premium
+  getPremiumShelters: async () => {
+    try {
+      console.log('shelterService.getPremiumShelters called');
+      const q = query(
+        collection(db, 'shelters'),
+        where('isPremium', '==', true)
+      );
+      const querySnapshot = await getDocs(q);
+      const shelters = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(shelter => shelter.status === 'approved')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      console.log('Premium shelters loaded from Firestore:', shelters);
+      return shelters;
+    } catch (error) {
+      console.error('Error getting premium shelters:', error);
+      return [];
+    }
+  },
+
+  // Obtener refugios regulares (no premium)
+  getRegularShelters: async () => {
+    try {
+      console.log('shelterService.getRegularShelters called');
+      const q = query(
+        collection(db, 'shelters'),
+        where('isPremium', '==', false)
+      );
+      const querySnapshot = await getDocs(q);
+      const shelters = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(shelter => shelter.status === 'approved')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      console.log('Regular shelters loaded from Firestore:', shelters);
+      return shelters;
+    } catch (error) {
+      console.error('Error getting regular shelters:', error);
+      return [];
+    }
+  },
+
+  // Eliminar refugio
+  deleteShelter: async (shelterId) => {
+    try {
+      console.log('shelterService.deleteShelter called for shelterId:', shelterId);
+      
+      // Obtener información del refugio
+      const shelter = await shelterService.getShelterById(shelterId);
+      if (!shelter) {
+        throw new Error('Refugio no encontrado');
+      }
+      
+      // Eliminar todas las mascotas del refugio
+      const petsQuery = query(
+        collection(db, 'pets'),
+        where('shelterId', '==', shelterId)
+      );
+      const petsSnapshot = await getDocs(petsQuery);
+      
+      console.log(`Found ${petsSnapshot.size} pets to delete for shelter`);
+      const deletePetsPromises = petsSnapshot.docs.map(petDoc => {
+        console.log('Deleting pet:', petDoc.id);
+        return deleteDoc(petDoc.ref);
+      });
+      
+      if (deletePetsPromises.length > 0) {
+        await Promise.all(deletePetsPromises);
+        console.log('✅ Deleted all shelter pets');
+      }
+      
+      // Eliminar el refugio
+      await deleteDoc(doc(db, 'shelters', shelterId));
+      console.log('✅ Shelter deleted successfully');
+      
+      return { success: true, deletedPets: petsSnapshot.size };
+    } catch (error) {
+      console.error('Error deleting shelter:', error);
+      throw error;
+    }
+  },
+
+  // Subir imagen del refugio a Firebase Storage
+  uploadShelterImage: async (file, shelterId) => {
+    try {
+      const imageRef = ref(storage, `shelters/${shelterId}/${file.name}`);
+      const snapshot = await uploadBytes(imageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading shelter image:', error);
       throw error;
     }
   }
