@@ -10,7 +10,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "deploy:rules": "node deploy-rules.js",
+    "check:firebase": "node check-firebase-config.js",
+    "firebase:login": "firebase login",
+    "firebase:init": "firebase init",
+    "firebase:deploy": "firebase deploy"
   },
   "dependencies": {
     "firebase": "^12.3.0",

@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, storage } from './config.js';
 import { handleFirebaseError, errorHandler } from '../utils/errorHandler.js';
+import { formValidator } from '../utils/validation.js';
 
 // Servicios para Notificaciones
 export const notificationService = {
@@ -189,6 +190,17 @@ export const chatService = {
     try {
       console.log('chatService.sendMessage called:', { conversationId, senderId, messageText });
       
+      // Obtener información de la conversación para validar participantes
+      const conversationDoc = await getDoc(doc(db, 'conversations', conversationId));
+      if (!conversationDoc.exists()) {
+        throw new Error('Conversación no encontrada');
+      }
+      
+      const conversationData = conversationDoc.data();
+      if (!conversationData.participants.includes(senderId)) {
+        throw new Error('Usuario no autorizado para enviar mensajes en esta conversación');
+      }
+      
       // Obtener nombre del remitente
       const senderProfile = await userService.getUserProfile(senderId);
       const senderName = senderProfile?.name || 'Usuario';
@@ -199,7 +211,8 @@ export const chatService = {
         senderName,
         message: messageText,
         timestamp: new Date().toISOString(),
-        read: false
+        read: false,
+        participants: conversationData.participants // Agregar participantes para las reglas
       };
       
       const docRef = await addDoc(collection(db, 'messages'), messageData);
@@ -414,6 +427,20 @@ export const petService = {
   // Crear nueva mascota
   createPet: async (petData) => {
     try {
+      console.log('petService.createPet called with data:', petData);
+      
+      // Verificar que el usuario esté autenticado
+      if (!petData.ownerId) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      // Validar datos de la mascota
+      const validation = formValidator.validatePetData(petData);
+      if (!validation.isValid) {
+        const errorMessage = Object.values(validation.errors).join(', ');
+        throw new Error(`Datos inválidos: ${errorMessage}`);
+      }
+      
       // Crear el documento de la mascota
       const docRef = await addDoc(collection(db, 'pets'), {
         ...petData,
@@ -426,7 +453,7 @@ export const petService = {
         shelterName: petData.shelterName || null
       });
 
-      console.log('Pet created successfully with ID:', docRef.id);
+      console.log('✅ Pet created successfully with ID:', docRef.id);
       
       // Si la mascota pertenece a un refugio, simular revisión del refugio
       if (petData.shelterId) {
@@ -435,7 +462,15 @@ export const petService = {
       
       return docRef.id;
     } catch (error) {
-      console.error('Error creating pet:', error);
+      console.error('❌ Error creating pet:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        petData
+      });
+      
+      // Manejar error con el sistema centralizado
+      handleFirebaseError(error, 'createPet');
       throw error;
     }
   },
@@ -679,15 +714,27 @@ export const favoriteService = {
   addFavorite: async (userId, petId) => {
     try {
       console.log('favoriteService.addFavorite called for userId:', userId, 'petId:', petId);
+      
+      // Verificar que el usuario esté autenticado
+      if (!userId) {
+        throw new Error('Usuario no autenticado');
+      }
+      
       const docRef = await addDoc(collection(db, 'favorites'), {
         userId,
         petId,
         createdAt: new Date().toISOString()
       });
-      console.log('Favorite added with ID:', docRef.id);
+      console.log('✅ Favorite added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('Error adding favorite:', error);
+      console.error('❌ Error adding favorite:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        userId,
+        petId
+      });
       throw error;
     }
   },
@@ -742,12 +789,42 @@ export const adoptionRequestService = {
   createAdoptionRequest: async (adoptionData) => {
     try {
       console.log('adoptionRequestService.createAdoptionRequest called:', adoptionData);
+      
+      // Validar datos de la solicitud
+      const validation = formValidator.validateAdoptionRequestData(adoptionData);
+      if (!validation.isValid) {
+        const errorMessage = Object.values(validation.errors).join(', ');
+        throw new Error(`Datos inválidos: ${errorMessage}`);
+      }
+      
       const docRef = await addDoc(collection(db, 'adoptionRequests'), {
         ...adoptionData,
         status: 'pending',
         createdAt: new Date().toISOString()
       });
       console.log('Adoption request created with ID:', docRef.id);
+      
+      // Crear conversación automáticamente entre el solicitante y el dueño
+      if (adoptionData.userId && adoptionData.ownerId) {
+        try {
+          console.log('Creating conversation between:', adoptionData.userId, 'and', adoptionData.ownerId);
+          const conversationId = await chatService.getOrCreateConversation(
+            adoptionData.userId,
+            adoptionData.ownerId,
+            adoptionData.petId
+          );
+          console.log('✅ Conversation created with ID:', conversationId);
+          
+          // Enviar mensaje inicial del sistema usando el userId como senderId
+          // ya que 'system' no está en los participantes
+          await chatService.sendMessage(conversationId, adoptionData.userId, 
+            `Solicitud de adopción para ${adoptionData.pet?.name || 'la mascota'} creada. Pueden comunicarse aquí.`);
+        } catch (conversationError) {
+          console.error('Error creating conversation:', conversationError);
+          // No lanzar error, solo registrar
+        }
+      }
+      
       return docRef.id;
     } catch (error) {
       console.error('Error creating adoption request:', error);
@@ -1004,17 +1081,16 @@ export const shelterService = {
     try {
       console.log('shelterService.createShelter called:', shelterData);
       
-      // Validaciones básicas SIN consultar la base de datos
+      // Verificar que el usuario esté autenticado
       if (!shelterData.ownerId) {
         throw new Error('❌ Error: ownerId es requerido para crear un refugio');
       }
       
-      if (!shelterData.name || shelterData.name.length < 3) {
-        throw new Error('❌ Error: Nombre del refugio debe tener al menos 3 caracteres');
-      }
-      
-      if (shelterData.name && shelterData.name.length > 100) {
-        throw new Error('❌ Error: Nombre del refugio no puede exceder 100 caracteres');
+      // Validar datos del refugio
+      const validation = formValidator.validateShelterData(shelterData);
+      if (!validation.isValid) {
+        const errorMessage = Object.values(validation.errors).join(', ');
+        throw new Error(`Datos inválidos: ${errorMessage}`);
       }
       
       // Validar que no contenga datos sospechosos
@@ -1040,6 +1116,14 @@ export const shelterService = {
       return docRef.id;
     } catch (error) {
       console.error('❌ Error creating shelter:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        shelterData
+      });
+      
+      // Manejar error con el sistema centralizado
+      handleFirebaseError(error, 'createShelter');
       throw error;
     }
   },

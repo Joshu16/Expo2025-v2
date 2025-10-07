@@ -27,7 +27,20 @@ export const AuthProvider = ({ children }) => {
     console.log("AuthProvider: Setting up auth listener");
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("AuthProvider: Auth state changed:", user);
+      if (user) {
+        console.log("AuthProvider: User authenticated:", {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          emailVerified: user.emailVerified
+        });
+      } else {
+        console.log("AuthProvider: No user authenticated");
+      }
       setUser(user);
+      setLoading(false);
+    }, (error) => {
+      console.error("AuthProvider: Auth state error:", error);
       setLoading(false);
     });
 
