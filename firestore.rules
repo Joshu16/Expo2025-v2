@@ -101,18 +101,12 @@ service cloud.firestore {
         request.auth.uid == resource.data.ownerId;
     }
     
-    // Reglas para mascotas
+    // Reglas para mascotas - PERMISOS TEMPORALMENTE RELAJADOS
     match /pets/{petId} {
       allow read: if true; // Todos pueden leer mascotas
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.ownerId &&
-        isValidPetData(request.resource.data);
-      allow update: if isAuthenticated() && 
-        request.auth.uid == resource.data.ownerId &&
-        isValidPetData(request.resource.data);
-      allow delete: if isAuthenticated() && 
-        (request.auth.uid == resource.data.ownerId || 
-         request.auth.uid == resource.data.userId);
+      allow create: if isAuthenticated(); // Solo requiere autenticación
+      allow update: if isAuthenticated(); // Solo requiere autenticación
+      allow delete: if isAuthenticated(); // Solo requiere autenticación
     }
     
     // Reglas para categorías
@@ -124,65 +118,39 @@ service cloud.firestore {
         isValidString(request.resource.data.name, 50);
     }
     
-    // Reglas para favoritos
+    // Reglas para favoritos - PERMISOS RELAJADOS
     match /favorites/{favoriteId} {
-      allow read: if isAuthenticated() && 
-        request.auth.uid == resource.data.userId;
-      allow write: if isAuthenticated() && 
-        request.auth.uid == resource.data.userId;
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.userId &&
-        request.resource.data.userId is string &&
-        request.resource.data.petId is string;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
     }
     
-    // Reglas para solicitudes de adopción
+    // Reglas para solicitudes de adopción - PERMISOS RELAJADOS
     match /adoptionRequests/{requestId} {
-      allow read: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.ownerId);
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.userId &&
-        isValidAdoptionRequestData(request.resource.data);
-      allow update: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.ownerId) &&
-        isValidAdoptionRequestData(request.resource.data);
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
     }
     
-    // Reglas para conversaciones
+    // Reglas para conversaciones - PERMISOS RELAJADOS
     match /conversations/{conversationId} {
-      allow read: if isAuthenticated() && 
-        request.auth.uid in resource.data.participants;
-      allow write: if isAuthenticated() && 
-        request.auth.uid in resource.data.participants;
-      allow create: if isAuthenticated() && 
-        request.auth.uid in request.resource.data.participants &&
-        request.resource.data.participants is list &&
-        request.resource.data.participants.size() == 2;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
     }
     
-    // Reglas para mensajes (más restrictivas)
+    // Reglas para mensajes - PERMISOS RELAJADOS
     match /messages/{messageId} {
-      allow read: if isAuthenticated() && 
-        request.auth.uid in resource.data.participants;
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.senderId &&
-        isValidMessageData(request.resource.data);
-      allow update: if isAuthenticated() && 
-        request.auth.uid == resource.data.senderId &&
-        resource.data.timestamp > (now() - duration.value(5, 'minutes'));
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
     }
     
-    // Reglas para notificaciones
+    // Reglas para notificaciones - PERMISOS RELAJADOS
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && 
-        request.auth.uid == resource.data.userId;
-      allow write: if isAuthenticated() && 
-        request.auth.uid == resource.data.userId;
-      allow create: if isAuthenticated() && 
-        request.auth.uid == request.resource.data.userId &&
-        isValidNotificationData(request.resource.data);
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
     }
     
     // Denegar acceso a cualquier otra colección
