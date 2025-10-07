@@ -17,12 +17,7 @@ document.body.setAttribute('data-theme', savedTheme);
 //   });
 // }
 
-// Configuración optimizada de Firebase (sin errores)
-if (import.meta.env.DEV) {
-  import('./utils/optimizedFirebase.js').then(module => {
-    console.log('🚀 Firebase optimizado habilitado en modo desarrollo');
-  });
-}
+// Configuración de Firebase ya está en App.jsx
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

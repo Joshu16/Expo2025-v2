@@ -2,26 +2,28 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
+import { ENV_CONFIG } from '../config/environment.js';
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Using environment variables for better security
+// NOTE: Storage is disabled as it's not available in the free plan
 const firebaseConfig = {
-  apiKey: "AIzaSyBnil9YV9LpAVA4GLUjoPoq7PSgq3DYYgk",
-  authDomain: "animals-adoption-app-v2.firebaseapp.com",
-  projectId: "animals-adoption-app-v2",
-  storageBucket: "animals-adoption-app-v2.appspot.com",
-  messagingSenderId: "702758490735",
-  appId: "1:702758490735:web:animals-adoption-app-v2"
+  apiKey: ENV_CONFIG.FIREBASE.API_KEY,
+  authDomain: ENV_CONFIG.FIREBASE.AUTH_DOMAIN,
+  projectId: ENV_CONFIG.FIREBASE.PROJECT_ID,
+  messagingSenderId: ENV_CONFIG.FIREBASE.MESSAGING_SENDER_ID,
+  appId: ENV_CONFIG.FIREBASE.APP_ID
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
+// Initialize Firebase services (only Database and Auth)
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
+
+// Storage is disabled - using placeholder images instead
+export const storage = null;
 
 // Test Firebase connection
 console.log("Firebase initialized:", app);

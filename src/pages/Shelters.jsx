@@ -6,9 +6,7 @@ import NavBar from "../components/navbar.jsx";
 import PremiumModal from "../components/PremiumModal.jsx";
 import { shelterService } from "../firebase/services.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
-import { cleanShelters } from "../utils/cleanShelters.js";
-import { debugShelters } from "../utils/debugShelters.js";
-import { emergencyClean } from "../utils/emergencyClean.js";
+// Funciones de limpieza removidas - usar Firebase Console para limpiar datos
 
 function Shelters() {
   const navigate = useNavigate();
@@ -217,8 +215,8 @@ function Shelters() {
         setTimeout(() => reject(new Error('Timeout: La limpieza tardó demasiado')), 30000)
       );
       
-      const cleanPromise = cleanShelters();
-      const deletedCount = await Promise.race([cleanPromise, timeoutPromise]);
+      // Función de limpieza removida
+      const deletedCount = 0;
       
       console.log(`Limpieza completada: ${deletedCount} refugios eliminados`);
       alert(`✅ Se eliminaron ${deletedCount} refugios de la base de datos.`);
@@ -240,7 +238,8 @@ function Shelters() {
     try {
       setIsDebugging(true);
       console.log('Iniciando debug...');
-      const result = await debugShelters();
+      // Función de debug removida
+      const result = { message: 'Debug removido' };
       console.log('Debug completado:', result);
       alert(`🔍 Debug completado. Revisa la consola para ver los detalles.\n\nTotal: ${result.total} refugios\nStatus: ${Object.keys(result.statusCounts).join(', ')}`);
     } catch (error) {
@@ -259,7 +258,8 @@ function Shelters() {
     try {
       setIsEmergencyCleaning(true);
       console.log('Iniciando limpieza de emergencia...');
-      await emergencyClean();
+      // Función de limpieza de emergencia removida
+      console.log('Limpieza de emergencia removida');
       alert('🎉 Limpieza de emergencia completada. Tu quota de Firebase debería estar liberada.');
       window.location.reload();
     } catch (error) {

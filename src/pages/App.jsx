@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import ErrorNotification from "../components/ErrorNotification.jsx";
 import "../styles/App.css";
-import "../utils/setupFirebase.js";
+// Firebase se inicializa automáticamente en config.js
 import Home from "./Home.jsx";
 import Categories from "./Categories.jsx";
 import Upload from "./Upload.jsx";
@@ -45,6 +46,21 @@ const ProtectedRoute = ({ element, user, loading }) => {
 
 function App() {
   const { user, loading } = useAuth();
+  const [error, setError] = useState(null);
+
+  // Escuchar notificaciones de error
+  useEffect(() => {
+    const handleError = (event) => {
+      setError(event.detail);
+    };
+
+    window.addEventListener('error-notification', handleError);
+    return () => window.removeEventListener('error-notification', handleError);
+  }, []);
+
+  const handleErrorClose = () => {
+    setError(null);
+  };
 
   if (loading) {
     return (
@@ -64,7 +80,8 @@ function App() {
   console.log("App render - loading:", loading);
 
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<ProtectedRoute element={<Home />} user={user} loading={loading} />} />
@@ -85,7 +102,14 @@ function App() {
       <Route path="/notifications" element={<ProtectedRoute element={<Notifications />} user={user} loading={loading} />} />
       <Route path="/adoption-requests" element={<ProtectedRoute element={<AdoptionRequests />} user={user} loading={loading} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+      
+      {/* Notificación de errores global */}
+      <ErrorNotification 
+        error={error} 
+        onClose={handleErrorClose}
+      />
+    </>
   );
 }
 

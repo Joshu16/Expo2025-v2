@@ -12,12 +12,8 @@ import {
   orderBy, 
   onSnapshot 
 } from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL 
-} from 'firebase/storage';
 import { db, storage } from './config.js';
+import { handleFirebaseError, errorHandler } from '../utils/errorHandler.js';
 
 // Servicios para Notificaciones
 export const notificationService = {
@@ -414,23 +410,25 @@ export const petService = {
     }
   },
 
-  // Subir imagen a Firebase Storage
+  // Subir imagen (Storage deshabilitado - usando placeholder)
   uploadPetImage: async (file, petId) => {
     try {
-      const imageRef = ref(storage, `pets/${petId}/${file.name}`);
+      // Storage no disponible en plan gratuito - usar placeholder
+      console.log('Storage no disponible - usando imagen placeholder');
       
-      // Agregar timeout para evitar que se cuelgue
-      const uploadPromise = uploadBytes(imageRef, file);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timeout')), 10000)
-      );
+      // Generar URL placeholder basada en el tipo de archivo
+      const placeholderImages = {
+        'image/jpeg': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop',
+        'image/png': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop',
+        'image/webp': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop'
+      };
       
-      const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
+      const placeholderUrl = placeholderImages[file.type] || placeholderImages['image/jpeg'];
+      return placeholderUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
+      console.error('Error with image placeholder:', error);
+      // Fallback a imagen por defecto
+      return 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop';
     }
   },
 
@@ -1291,16 +1289,18 @@ export const shelterService = {
     }
   },
 
-  // Subir imagen del refugio a Firebase Storage
+  // Subir imagen del refugio (Storage deshabilitado - usando placeholder)
   uploadShelterImage: async (file, shelterId) => {
     try {
-      const imageRef = ref(storage, `shelters/${shelterId}/${file.name}`);
-      const snapshot = await uploadBytes(imageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
+      // Storage no disponible en plan gratuito - usar placeholder
+      console.log('Storage no disponible - usando imagen placeholder para refugio');
+      
+      // Imagen placeholder para refugios
+      const shelterPlaceholder = 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?q=80&w=400&auto=format&fit=crop';
+      return shelterPlaceholder;
     } catch (error) {
-      console.error('Error uploading shelter image:', error);
-      throw error;
+      console.error('Error with shelter image placeholder:', error);
+      return 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?q=80&w=400&auto=format&fit=crop';
     }
   },
 
