@@ -82,15 +82,23 @@ function Chat() {
           try {
             const otherUserData = await userService.getUserProfile(otherUserId);
             console.log('Chat: Other user loaded:', otherUserData);
+            
+            // Si no tiene nombre, usar displayName o email
+            if (otherUserData && !otherUserData.name) {
+              otherUserData.name = otherUserData.displayName || 
+                                  otherUserData.email?.split('@')[0] || 
+                                  'Usuario';
+            }
+            
             setOtherUser(otherUserData || { 
               uid: otherUserId, 
-              name: `Usuario ${otherUserId.substring(0, 6)}` 
+              name: 'Usuario' // Solo "Usuario" como fallback, no el ID
             });
           } catch (error) {
             console.error('Error loading other user profile:', error);
             setOtherUser({ 
               uid: otherUserId, 
-              name: `Usuario ${otherUserId.substring(0, 6)}` 
+              name: 'Usuario' // Solo "Usuario" como fallback, no el ID
             });
           }
         }

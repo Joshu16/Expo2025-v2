@@ -41,6 +41,13 @@ function Conversations() {
             try {
               otherUser = await userService.getUserProfile(otherUserId);
               console.log('Other user loaded:', otherUser);
+              
+              // Si no tiene nombre, usar displayName o email
+              if (otherUser && !otherUser.name) {
+                otherUser.name = otherUser.displayName || 
+                                otherUser.email?.split('@')[0] || 
+                                'Usuario';
+              }
             } catch (error) {
               console.error('Error loading other user:', error);
             }
@@ -52,7 +59,7 @@ function Conversations() {
             ...conversation,
             otherUser: otherUser || { 
               uid: otherUserId, 
-              name: otherUserId ? `Usuario ${otherUserId.substring(0, 6)}` : 'Usuario Desconocido' 
+              name: 'Usuario' // Solo "Usuario" como fallback, no el ID
             },
             pet
           };
