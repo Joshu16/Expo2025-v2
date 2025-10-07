@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { userService, petService, favoriteService, shelterService } from "../firebase/services.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import { useTheme } from "../hooks/useTheme.js";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
 
@@ -19,16 +20,10 @@ function Home() {
   const [shelters, setShelters] = useState([]);
   const [userShelters, setUserShelters] = useState([]);
   const [userType, setUserType] = useState('user'); // 'user', 'shelter', 'premium'
+  const { currentTheme, toggleTheme } = useTheme();
 
   // Si venimos de Categories, obtenemos la categoría seleccionada
   const categoryFilter = location.state?.category || "";
-
-  // Aplicar tema al cargar
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    document.body.setAttribute('data-theme', savedTheme);
-  }, []);
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -430,6 +425,21 @@ function Home() {
             onChange={(e) => setSearch(e.target.value)}
             className="search-input"
           />
+          <button 
+            onClick={toggleTheme}
+            className="theme-toggle-btn"
+            title={currentTheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          >
+            {currentTheme === 'dark' ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3V4M12 20V21M4 12H3M6.31412 6.31412L5.5 5.5M17.6859 6.31412L18.5 5.5M6.31412 17.69L5.5 18.5M17.6859 17.69L18.5 18.5M21 12H20M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
         </div>
 
         {/* Acciones rápidas */}

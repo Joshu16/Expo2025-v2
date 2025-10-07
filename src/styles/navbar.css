@@ -106,6 +106,7 @@
   color: var(--text-inverse);
 }
 
+
 /* Botón central acentuado - ahora es el botón de favoritos */
 .nav-icon:nth-child(3) {
   background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-hover) 100%);

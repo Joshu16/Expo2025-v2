@@ -51,6 +51,8 @@
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-spring: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   
   /* Z-index */
   --z-dropdown: 1000;
@@ -261,6 +263,7 @@ body {
   align-items: center;
   background: none !important;
   background-color: transparent !important;
+  gap: var(--space-sm);
 }
 
 .search-icon {
@@ -276,7 +279,7 @@ body {
 }
 
 .search-input {
-  width: 100%;
+  flex: 1;
   border: none !important;
   outline: none !important;
   background: none !important;
@@ -319,13 +322,36 @@ body {
   min-height: 70px;
   justify-content: center;
   flex: 1;
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0) scale(1);
+}
+
+.quick-action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 122, 255, 0.1), transparent);
+  transition: left var(--transition-slow);
 }
 
 .quick-action-btn:hover {
   background: var(--bg-secondary);
   border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.quick-action-btn:hover::before {
+  left: 100%;
+}
+
+.quick-action-btn:active {
+  transform: translateY(0) scale(0.98);
+  transition: all var(--transition-fast);
 }
 
 .quick-action-btn svg {
@@ -548,12 +574,36 @@ body[data-theme="dark"] .favorites-toggle.active {
   height: 100%;
   width: 100%;
   min-width: 0;
+  transform: translateY(0) scale(1);
+}
+
+.pet-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(0, 122, 255, 0.05) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .pet-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.02);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-color);
+}
+
+.pet-card:hover::before {
+  opacity: 1;
+}
+
+.pet-card:active {
+  transform: translateY(-2px) scale(0.98);
+  transition: all var(--transition-fast);
 }
 
 [data-theme="dark"] .pet-card { 
@@ -640,12 +690,46 @@ body[data-theme="dark"] .favorites-toggle.active {
   -webkit-backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm);
   z-index: 2;
+  transform: scale(1);
+  position: relative;
+  overflow: hidden;
+}
+
+.favorite-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 59, 48, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all var(--transition-bounce);
+  pointer-events: none;
 }
 
 .favorite-btn:hover {
   background: var(--bg-card);
   transform: scale(1.1);
   box-shadow: var(--shadow-md);
+}
+
+.favorite-btn:active::before {
+  width: 40px;
+  height: 40px;
+}
+
+.favorite-btn.favorited {
+  animation: heartBeat 0.6s ease-in-out;
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(1.1); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 .favorite-btn.favorited {
@@ -850,6 +934,27 @@ body[data-theme="dark"] .favorites-toggle.active {
     transform: none; 
     box-shadow: var(--shadow-sm); 
   }
+  
+  /* Transiciones táctiles */
+  .pet-card:active {
+    transform: scale(0.98);
+    transition: all var(--transition-fast);
+  }
+  
+  .quick-action-btn:active {
+    transform: scale(0.95);
+    transition: all var(--transition-fast);
+  }
+  
+  .nav-icon:active {
+    transform: scale(0.9);
+    transition: all var(--transition-fast);
+  }
+  
+  .btn:active {
+    transform: scale(0.95);
+    transition: all var(--transition-fast);
+  }
 }
 
 /* Asegurar que las tarjetas sean táctiles */
@@ -866,6 +971,254 @@ body[data-theme="dark"] .favorites-toggle.active {
 /* Scroll suave */
 html {
   scroll-behavior: smooth;
+}
+
+/* Transiciones para inputs y formularios */
+input, textarea, select {
+  transition: all var(--transition-normal);
+}
+
+input:focus, textarea:focus, select:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+/* Animaciones de entrada para elementos */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Aplicar animaciones a elementos específicos */
+.pet-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.quick-action-btn {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.nav-icon {
+  transition: all var(--transition-normal);
+}
+
+.nav-icon:hover {
+  transform: scale(1.1);
+}
+
+.nav-icon:active {
+  transform: scale(0.95);
+}
+
+/* Transiciones para elementos de búsqueda y filtros */
+.search-input {
+  transition: all var(--transition-normal);
+}
+
+.search-input:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+/* Botón de toggle del tema */
+.theme-toggle-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  min-width: 40px;
+  height: 40px;
+  margin-left: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle-btn svg {
+  transition: transform var(--transition-normal);
+}
+
+.theme-toggle-btn:hover svg {
+  transform: rotate(180deg);
+}
+
+.filter-trigger {
+  transition: all var(--transition-normal);
+}
+
+.filter-trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.filter-options {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Transiciones para botones de acción */
+.btn-primary {
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  transition: all var(--transition-fast);
+}
+
+/* Transiciones para elementos de lista */
+.pet-list-item {
+  transition: all var(--transition-normal);
+}
+
+.pet-list-item:hover {
+  transform: translateX(4px);
+  background: var(--bg-secondary);
+}
+
+/* Transiciones para modales */
+.modal-overlay {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: bounceIn 0.4s ease-out;
+}
+
+/* Transiciones para notificaciones */
+.notification {
+  animation: slideInRight 0.4s ease-out;
+}
+
+.notification.closing {
+  animation: slideOut 0.3s ease-in;
+}
+
+/* Transiciones para elementos de carga */
+.loading-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Transiciones para elementos de scroll */
+.scroll-container {
+  scroll-behavior: smooth;
+}
+
+/* Transiciones para elementos de drag and drop */
+.draggable {
+  transition: all var(--transition-normal);
+}
+
+.draggable:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.draggable.dragging {
+  transform: rotate(5deg) scale(1.05);
+  box-shadow: var(--shadow-xl);
+  z-index: 1000;
 }
 
 /* Mejoras en el scrollbar */
@@ -1108,6 +1461,7 @@ html {
   margin: 0 0 16px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
