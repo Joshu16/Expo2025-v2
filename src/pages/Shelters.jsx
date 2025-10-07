@@ -5,7 +5,7 @@ import "../styles/Shelters.css";
 import NavBar from "../components/navbar.jsx";
 import PremiumModal from "../components/PremiumModal.jsx";
 import { shelterService } from "../firebase/services.js";
-import { useAuth } from "../firebase/auth.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import { cleanShelters } from "../utils/cleanShelters.js";
 import { debugShelters } from "../utils/debugShelters.js";
 import { emergencyClean } from "../utils/emergencyClean.js";

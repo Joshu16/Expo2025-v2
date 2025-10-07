@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import "../styles/App.css";
 import "../styles/Tracking.css";
 import NavBar from "../components/navbar.jsx";
 import { adoptionRequestService, petService, userService } from "../firebase/services.js";
 
-function Tracking({ user }) {
+function Tracking() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('sent'); // 'sent' o 'received'
   const [sentRequests, setSentRequests] = useState([]);

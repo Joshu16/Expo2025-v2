@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import '../styles/Conversations.css';
 import NavBar from '../components/navbar.jsx';
 import { chatService, userService, petService } from '../firebase/services.js';
 
-function Conversations({ user }) {
+function Conversations() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);

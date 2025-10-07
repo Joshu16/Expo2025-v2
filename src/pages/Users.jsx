@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import '../styles/Users.css';
 import NavBar from '../components/navbar.jsx';
 import { userService, petService, chatService } from '../firebase/services.js';
 
-function Users({ user }) {
+function Users() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);

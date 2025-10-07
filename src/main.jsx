@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter } from "react-router-dom";
+import { AuthProvider } from './contexts/AuthContext.jsx';
 import './styles/App.css'
 import App from './pages/App.jsx'
 
@@ -26,7 +27,9 @@ if (import.meta.env.DEV) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HashRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </HashRouter>
   </StrictMode>,
 )

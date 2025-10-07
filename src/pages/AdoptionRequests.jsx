@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import { adoptionRequestService, petService, userService } from "../firebase/services.js";
 import "../styles/App.css";
 import "../styles/AdoptionRequests.css";
 import NavBar from "../components/navbar.jsx";
 
-function AdoptionRequests({ user }) {
+function AdoptionRequests() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);

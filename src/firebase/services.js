@@ -468,6 +468,12 @@ export const petService = {
       });
 
       console.log('Pet created successfully with ID:', docRef.id);
+      
+      // Si la mascota pertenece a un refugio, simular revisión del refugio
+      if (petData.shelterId) {
+        await shelterService.simulateShelterReview(petData.shelterId);
+      }
+      
       return docRef.id;
     } catch (error) {
       console.error('Error creating pet:', error);
@@ -1295,6 +1301,49 @@ export const shelterService = {
     } catch (error) {
       console.error('Error uploading shelter image:', error);
       throw error;
+    }
+  },
+
+  // Simular revisión del refugio después de subir primera mascota
+  simulateShelterReview: async (shelterId) => {
+    try {
+      console.log('🔍 Simulando revisión del refugio:', shelterId);
+      
+      // Obtener el refugio
+      const shelter = await shelterService.getShelterById(shelterId);
+      if (!shelter) {
+        console.log('❌ Refugio no encontrado para revisión');
+        return;
+      }
+
+      // Simular tiempo de procesamiento (2-5 segundos)
+      const reviewTime = Math.random() * 3000 + 2000;
+      await new Promise(resolve => setTimeout(resolve, reviewTime));
+
+      // Simular resultado de la revisión (90% aprobado, 10% pendiente)
+      const isApproved = Math.random() > 0.1;
+      const newStatus = isApproved ? 'active' : 'pending';
+      
+      // Actualizar estado del refugio
+      await shelterService.updateShelterStatus(shelterId, newStatus);
+      
+      // Crear notificación para el dueño del refugio
+      const notificationData = {
+        userId: shelter.ownerId,
+        type: 'shelter_review',
+        title: isApproved ? '✅ Refugio Aprobado' : '⏳ Refugio en Revisión',
+        message: isApproved 
+          ? `¡Felicidades! Tu refugio "${shelter.name}" ha sido aprobado y está activo.`
+          : `Tu refugio "${shelter.name}" está siendo revisado. Te notificaremos cuando esté listo.`,
+        shelterId: shelterId,
+        shelterName: shelter.name
+      };
+      
+      await notificationService.createNotification(notificationData);
+      
+      console.log(`✅ Simulación de revisión completada: ${newStatus}`);
+    } catch (error) {
+      console.error('❌ Error en simulación de revisión:', error);
     }
   }
 };

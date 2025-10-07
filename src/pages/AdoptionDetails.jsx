@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import "../styles/App.css";
 import "../styles/AdoptionDetails.css";
 import NavBar from "../components/navbar.jsx";
 import { adoptionRequestService, chatService } from "../firebase/services.js";
 
-function AdoptionDetails({ user }) {
+function AdoptionDetails() {
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { requestId } = useParams();

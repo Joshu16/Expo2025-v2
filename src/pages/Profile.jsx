@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService, petService, favoriteService, shelterService } from "../firebase/services.js";
-import { useAuth } from "../firebase/auth.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import "../styles/App.css";
 import "../styles/Profile.css";
 import NavBar from "../components/navbar.jsx";
 
-function Profile({ user }) {
+function Profile() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('my-pets');
   const [userProfile, setUserProfile] = useState({ name: "", address: "", phone: "", email: "" });
   const [myPets, setMyPets] = useState([]);
@@ -459,68 +459,140 @@ function Profile({ user }) {
           )}
         </div>
 
-        {/* Modal de configuración */}
+        {/* Modal de configuración moderno */}
         {editing && (
           <div className="modal-overlay" onClick={() => setEditing(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Configurar Cuenta</h3>
-                <button className="close-btn" onClick={() => setEditing(false)}>×</button>
+            <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="settings-header">
+                <div className="settings-title">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+                  </svg>
+                  <h3>Configuración</h3>
+                </div>
+                <button className="close-btn" onClick={() => setEditing(false)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
               </div>
               
-              <div className="modal-body">
-          <div className="form-group">
-                  <label>Nombre completo</label>
-            <input
-              type="text"
-              value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Tu nombre completo"
-            />
-          </div>
+              <div className="settings-content">
+                {/* Información personal */}
+                <div className="settings-section">
+                  <h4 className="section-title">Información Personal</h4>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label className="form-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                        Nombre completo
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder="Tu nombre completo"
+                        className="form-input"
+                      />
+                    </div>
 
-          <div className="form-group">
-                  <label>Dirección</label>
-            <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    placeholder="Tu dirección"
-                  />
-          </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        Dirección
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        placeholder="Tu dirección"
+                        className="form-input"
+                      />
+                    </div>
 
-          <div className="form-group">
-                  <label>Teléfono</label>
-            <input
-              type="tel"
-              value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="Tu número de teléfono"
-            />
-          </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                        </svg>
+                        Teléfono
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        placeholder="Tu número de teléfono"
+                        className="form-input"
+                      />
+                    </div>
 
-          <div className="form-group">
-                  <label>Email</label>
-            <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="Tu email"
-            />
-          </div>
-          </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        placeholder="Tu email"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-              <div className="modal-actions">
-                <button className="logout-button" onClick={handleLogout}>
+                {/* Preferencias de visualización */}
+                <div className="settings-section">
+                  <h4 className="section-title">Preferencias de Visualización</h4>
+                  <div className="form-group">
+                    <label className="form-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                      Mostrar mascotas
+                    </label>
+                    <div className="select-wrapper">
+                      <select 
+                        value={activeTab} 
+                        onChange={(e) => setActiveTab(e.target.value)}
+                        className="form-select"
+                      >
+                        <option value="my-pets">Mis mascotas</option>
+                        <option value="favorites">Favoritas</option>
+                        <option value="shelters">Mis refugios</option>
+                      </select>
+                      <svg className="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 10l5 5 5-5z"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-footer">
+                <button className="logout-btn" onClick={handleLogout}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                  </svg>
                   Cerrar Sesión
                 </button>
-                <div className="modal-actions-right">
-                  <button className="cancel-button" onClick={handleCancel}>
+                <div className="settings-actions">
+                  <button className="cancel-btn" onClick={handleCancel}>
                     Cancelar
-          </button>
-                  <button className="save-button" onClick={handleSave}>
+                  </button>
+                  <button className="save-btn" onClick={handleSave}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
                     Guardar
-            </button>
+                  </button>
                 </div>
               </div>
             </div>

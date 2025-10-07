@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import '../styles/Chat.css';
 import NavBar from '../components/navbar.jsx';
 import { chatService, userService } from '../firebase/services.js';
 
-function Chat({ user }) {
+function Chat() {
+  const { user } = useAuth();
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);

@@ -5,7 +5,7 @@ import "../styles/ShelterAdmin.css";
 import NavBar from "../components/navbar.jsx";
 import PremiumModal from "../components/PremiumModal.jsx";
 import { shelterService, petService } from "../firebase/services.js";
-import { useAuth } from "../firebase/auth.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 function ShelterAdmin() {
   const navigate = useNavigate();

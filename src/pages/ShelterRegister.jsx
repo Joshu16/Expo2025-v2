@@ -5,7 +5,7 @@ import "../styles/ShelterRegister.css";
 import NavBar from "../components/navbar.jsx";
 import PremiumModal from "../components/PremiumModal.jsx";
 import { shelterService, userService } from "../firebase/services.js";
-import { useAuth } from "../firebase/auth.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 function ShelterRegister() {
   const navigate = useNavigate();
@@ -104,9 +104,9 @@ function ShelterRegister() {
         ownerName: user?.displayName || user?.email || 'Usuario Anónimo',
         rating: 0,
         petsCount: 0,
-        verified: false,
+        verified: true,
         isPremium: false,
-        status: 'approved'
+        status: 'active'
       };
 
       console.log('Creating shelter with data:', shelterData);
@@ -116,11 +116,6 @@ function ShelterRegister() {
       // Mostrar modal de premium después del registro
       setShowPremiumModal(true);
       setSelectedShelterForPremium(shelterId);
-      
-      // Recargar la página para mostrar el refugio en el perfil
-      setTimeout(() => {
-        window.location.href = '/profile';
-      }, 2000);
     } catch (error) {
       console.error("Error creating shelter", error);
       setError("Error al registrar el refugio. Inténtalo de nuevo.");
@@ -132,17 +127,17 @@ function ShelterRegister() {
   const handlePremiumSuccess = () => {
     setShowPremiumModal(false);
     setSelectedShelterForPremium(null);
-    alert("¡Refugio registrado exitosamente! Ahora tienes acceso premium.");
-    // Redirigir al perfil para ver el refugio creado
-    navigate("/profile");
+    alert("¡Refugio registrado exitosamente! Ahora tienes acceso premium.\n\n¿Te gustaría subir tu primera mascota?");
+    // Redirigir a upload para subir primera mascota
+    navigate("/upload");
   };
 
   const handlePremiumClose = () => {
     setShowPremiumModal(false);
     setSelectedShelterForPremium(null);
-    alert("Refugio registrado exitosamente. Puedes actualizar a premium más tarde desde la página de refugios.");
-    // Redirigir al perfil para ver el refugio creado
-    navigate("/profile");
+    alert("Refugio registrado exitosamente. Puedes actualizar a premium más tarde desde la página de refugios.\n\n¿Te gustaría subir tu primera mascota?");
+    // Redirigir a upload para subir primera mascota
+    navigate("/upload");
   };
 
   return (

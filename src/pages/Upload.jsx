@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService, petService, shelterService } from "../firebase/services.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import "../styles/App.css";
 import "../styles/Upload.css";
 import NavBar from "../components/navbar.jsx";
 
-function Upload({ user }) {
+function Upload() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");

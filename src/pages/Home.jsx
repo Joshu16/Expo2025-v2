@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { userService, petService, favoriteService, shelterService } from "../firebase/services.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import "../styles/App.css";
 import NavBar from "../components/navbar.jsx";
 
-function Home({ user }) {
+function Home() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [pets, setPets] = useState([]);
@@ -12,9 +14,9 @@ function Home({ user }) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState(['all']); // Array de filtros seleccionados
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [shelters, setShelters] = useState([]);
-  const [showOnlyShelters, setShowOnlyShelters] = useState(false);
   const [userShelters, setUserShelters] = useState([]);
   const [userType, setUserType] = useState('user'); // 'user', 'shelter', 'premium'
 
@@ -27,6 +29,20 @@ function Home({ user }) {
     document.documentElement.setAttribute('data-theme', savedTheme);
     document.body.setAttribute('data-theme', savedTheme);
   }, []);
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilterDropdown && !event.target.closest('.filter-dropdown')) {
+        setShowFilterDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilterDropdown]);
 
   // Función para cargar favoritos del usuario
   const loadFavorites = async () => {
@@ -223,39 +239,87 @@ function Home({ user }) {
     const term = search.trim().toLowerCase();
     let filtered = pets;
 
-    // Si está activado el filtro de favoritas, mostrar solo favoritas
-    if (showOnlyFavorites && user?.uid) {
-      const favoritePetIds = favorites.map(fav => fav.petId);
-      filtered = pets.filter(pet => favoritePetIds.includes(pet.id));
+    // Si no hay filtros seleccionados o solo 'all', mostrar todas
+    if (selectedFilters.length === 0 || selectedFilters.includes('all')) {
+      // Si viene de Categories, aplicar filtro de categoría
+      if (categoryFilter) {
+        filtered = pets.filter(pet => 
+          pet.type.toLowerCase() === categoryFilter.toLowerCase()
+        );
+      }
+    } else {
+      // Aplicar filtros múltiples
+      filtered = pets.filter(pet => {
+        return selectedFilters.some(filter => {
+          switch (filter) {
+            case 'favorites':
+              if (user?.uid) {
+                const favoritePetIds = favorites.map(fav => fav.petId);
+                return favoritePetIds.includes(pet.id);
+              }
+              return false;
+            case 'shelters':
+              return pet.shelterId && pet.shelterName;
+            case 'dogs':
+              return pet.type.toLowerCase() === 'perro';
+            case 'cats':
+              return pet.type.toLowerCase() === 'gato';
+            case 'others':
+              return pet.type.toLowerCase() !== 'perro' && 
+                     pet.type.toLowerCase() !== 'gato';
+            default:
+              return false;
+          }
+        });
+      });
     }
 
+    // Aplicar búsqueda
     return filtered.filter((p) => {
-      // Filtrar por categoría si viene de Categories
-      const matchesCategory = categoryFilter ? p.type.toLowerCase() === categoryFilter.toLowerCase() : true;
-
-      // Filtrar por búsqueda
-      const matchesSearch = !term || [p.name, p.breed, p.gender, p.age, p.location]
+      const matchesSearch = !term || [p.name, p.breed, p.gender, p.age, p.location, p.shelterName]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
 
-      return matchesCategory && matchesSearch;
+      return matchesSearch;
     });
-  }, [pets, search, categoryFilter, showOnlyFavorites, favorites, user]);
+  }, [pets, search, selectedFilters, categoryFilter, favorites, user]);
 
-  // Filtro para refugios
-  const filteredShelters = useMemo(() => {
-    if (showOnlyShelters) {
-      return shelters.filter(shelter =>
-        shelter.name.toLowerCase().includes(search.toLowerCase()) ||
-        shelter.location.toLowerCase().includes(search.toLowerCase()) ||
-        shelter.description.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    return [];
-  }, [shelters, search, showOnlyShelters]);
 
   const handleSearchClick = () => {
     navigate("/categories");
+  };
+
+  const toggleFilter = (filter) => {
+    setSelectedFilters(prev => {
+      if (filter === 'all') {
+        return ['all'];
+      }
+      
+      if (prev.includes(filter)) {
+        const newFilters = prev.filter(f => f !== filter);
+        return newFilters.length === 0 ? ['all'] : newFilters;
+      } else {
+        const newFilters = prev.filter(f => f !== 'all');
+        return [...newFilters, filter];
+      }
+    });
+  };
+
+  const getFilterLabel = () => {
+    if (selectedFilters.includes('all') || selectedFilters.length === 0) {
+      return 'Todos los filtros';
+    }
+    if (selectedFilters.length === 1) {
+      const labels = {
+        'favorites': 'Favoritas',
+        'shelters': 'Refugios',
+        'dogs': 'Perros',
+        'cats': 'Gatos',
+        'others': 'Otros'
+      };
+      return labels[selectedFilters[0]] || 'Filtros';
+    }
+    return `${selectedFilters.length} filtros`;
   };
 
   const handleCardClick = (pet) => {
@@ -392,26 +456,152 @@ function Home({ user }) {
       </header>
 
       <main className="main-content">
+        {/* Filtro único con dropdown */}
+        <div className="filter-container">
+          <div className="filter-dropdown">
+            <button 
+              className="filter-trigger"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+              </svg>
+              <span className="filter-label">{getFilterLabel()}</span>
+              <svg 
+                className={`filter-arrow ${showFilterDropdown ? 'open' : ''}`} 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="currentColor"
+              >
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+            
+            {showFilterDropdown && (
+              <div className="filter-options">
+                <div className="filter-option">
+                  <label className="filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedFilters.includes('all')}
+                      onChange={() => toggleFilter('all')}
+                    />
+                    <span className="checkmark"></span>
+                    <span className="option-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                      Todas las mascotas
+                    </span>
+                  </label>
+                </div>
+                
+                {user?.uid && favorites.length > 0 && (
+                  <div className="filter-option">
+                    <label className="filter-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedFilters.includes('favorites')}
+                        onChange={() => toggleFilter('favorites')}
+                      />
+                      <span className="checkmark"></span>
+                      <span className="option-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        Favoritas ({favorites.length})
+                      </span>
+                    </label>
+                  </div>
+                )}
+                
+                <div className="filter-option">
+                  <label className="filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedFilters.includes('shelters')}
+                      onChange={() => toggleFilter('shelters')}
+                    />
+                    <span className="checkmark"></span>
+                    <span className="option-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                      </svg>
+                      De refugios
+                    </span>
+                  </label>
+                </div>
+                
+                <div className="filter-option">
+                  <label className="filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedFilters.includes('dogs')}
+                      onChange={() => toggleFilter('dogs')}
+                    />
+                    <span className="checkmark"></span>
+                    <span className="option-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.5 2h-13C4.67 2 4 2.67 4 3.5v17c0 .83.67 1.5 1.5 1.5h13c.83 0 1.5-.67 1.5-1.5v-17c0-.83-.67-1.5-1.5-1.5zM12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm4 14H8v-1.5c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2V20z"/>
+                      </svg>
+                      Perros
+                    </span>
+                  </label>
+                </div>
+                
+                <div className="filter-option">
+                  <label className="filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedFilters.includes('cats')}
+                      onChange={() => toggleFilter('cats')}
+                    />
+                    <span className="checkmark"></span>
+                    <span className="option-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                      Gatos
+                    </span>
+                  </label>
+                </div>
+                
+                <div className="filter-option">
+                  <label className="filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedFilters.includes('others')}
+                      onChange={() => toggleFilter('others')}
+                    />
+                    <span className="checkmark"></span>
+                    <span className="option-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                      Otras mascotas
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="section-header">
           <div className="section-title-row">
             <h2 className="section-title">
-              {showOnlyFavorites ? 'Tus favoritas' : 'Mascotas disponibles'}
+              {selectedFilters.includes('all') || selectedFilters.length === 0 ? 'Mascotas disponibles' :
+               selectedFilters.length === 1 ? 
+                 (selectedFilters.includes('favorites') ? 'Tus favoritas' :
+                  selectedFilters.includes('shelters') ? 'Mascotas de refugios' :
+                  selectedFilters.includes('dogs') ? 'Perros disponibles' :
+                  selectedFilters.includes('cats') ? 'Gatos disponibles' :
+                  selectedFilters.includes('others') ? 'Otras mascotas' : 'Mascotas disponibles') :
+               'Mascotas filtradas'}
             </h2>
             <span className="pets-count">{filteredPets.length} mascotas</span>
           </div>
-          {user?.uid && favorites.length > 0 && (
-            <div className="favorites-controls">
-              <button 
-                className={`favorites-toggle ${showOnlyFavorites ? 'active' : ''}`}
-                onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-                {showOnlyFavorites ? 'Ver todas' : 'Solo favoritas'}
-              </button>
-            </div>
-          )}
         </div>
 
         <div className={`pets-grid ${userType === 'user' ? 'single-column' : userType === 'shelter' ? 'two-columns' : 'premium-layout'}`}>
