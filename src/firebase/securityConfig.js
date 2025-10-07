@@ -124,21 +124,11 @@ export const generateAlert = (type, count, threshold) => {
   return alerts[count >= threshold ? 'critical' : 'warning'];
 };
 
-// Función para limpiar datos automáticamente
-export const autoCleanup = async (collectionName) => {
-  console.log(`🧹 Iniciando limpieza automática de ${collectionName}...`);
-  
-  // Esta función se implementaría con la lógica específica
-  // para limpiar datos de prueba o duplicados
-  
-  return { cleaned: 0, message: 'Limpieza completada' };
-};
 
 export default {
   SECURITY_CONFIG,
   validateInput,
   checkUserLimits,
   checkGlobalLimits,
-  generateAlert,
-  autoCleanup
+  generateAlert
 };

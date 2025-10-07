@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react';
 export const useTheme = () => {
   const [currentTheme, setCurrentTheme] = useState('dark');
 
-  // Cargar tema al montar
+  // Cargar tema al montar - siempre iniciar en modo oscuro
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark';
-    setCurrentTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    document.body.setAttribute('data-theme', savedTheme);
+    // Forzar modo oscuro si no hay tema guardado o si es la primera vez
+    const themeToUse = savedTheme === 'light' ? 'dark' : 'dark';
+    setCurrentTheme(themeToUse);
+    document.documentElement.setAttribute('data-theme', themeToUse);
+    document.body.setAttribute('data-theme', themeToUse);
   }, []);
 
   // Función para cambiar tema

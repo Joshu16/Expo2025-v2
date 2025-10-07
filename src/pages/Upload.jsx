@@ -9,8 +9,6 @@ import NavBar from "../components/navbar.jsx";
 function Upload() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [petData, setPetData] = useState({
     name: "",
@@ -63,23 +61,8 @@ function Upload() {
     loadData();
   }, [user]);
 
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    setSelectedFile(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setPreviewUrl(reader.result);
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewUrl("");
-    }
-  };
-
   const handleUrlChange = (value) => {
     setImageUrl(value);
-    if (value && /^https?:\/\//i.test(value)) {
-      setPreviewUrl(value);
-    }
   };
 
   const handleInputChange = (field, value) => {
@@ -121,8 +104,8 @@ function Upload() {
       alert('La ubicación es obligatoria');
       return;
     }
-    if (!selectedFile && !imageUrl.trim()) {
-      alert('Debes subir una imagen o proporcionar un enlace');
+    if (!imageUrl.trim()) {
+      alert('Debes proporcionar un enlace de imagen');
       return;
     }
 
@@ -132,7 +115,7 @@ function Upload() {
       
       const newPet = {
         ...petData,
-        img: imageUrl.trim() || '', // Usar URL si está disponible
+        img: imageUrl.trim(),
         status: "available",
         ownerId: user.uid,
         ownerName: userProfile.name || user.displayName || 'Usuario'
@@ -145,11 +128,10 @@ function Upload() {
       }
 
       console.log('Pet data prepared:', newPet);
-      console.log('Selected file:', selectedFile ? 'Yes' : 'No');
-      console.log('Image URL:', imageUrl.trim() || 'None');
+      console.log('Image URL:', imageUrl.trim());
 
-      // Crear la mascota (el servicio manejará la imagen)
-      const petId = await petService.createPet(newPet, selectedFile);
+      // Crear la mascota
+      const petId = await petService.createPet(newPet);
       
       console.log('Pet created successfully with ID:', petId);
       alert('Mascota subida correctamente');
@@ -175,38 +157,8 @@ function Upload() {
       </div>
 
       <div className="upload-content">
-        {/* Image Upload Section */}
+        {/* Image URL Section */}
         <div className="image-upload-section">
-          <div className="image-upload-area">
-            <input
-              type="file"
-              id="file-upload"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="file-input"
-            />
-            <label htmlFor="file-upload" className="image-upload-label">
-              {previewUrl ? (
-                <div className="image-preview">
-                  <img src={previewUrl} alt="Preview" />
-                  <div className="image-overlay">
-                    <span className="change-text">Cambiar imagen</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="upload-placeholder">
-                  <div className="upload-icon-large">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M4 5a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2H4zm3 9l3-4 2 3 3-4 4 5H7z"/>
-                    </svg>
-                  </div>
-                  <p className="upload-text">Toca para subir una foto</p>
-                  <p className="upload-hint">JPG, PNG o GIF</p>
-                </div>
-              )}
-            </label>
-          </div>
-
           <div className="url-input-section">
             <div className="input-with-icon">
               <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -214,10 +166,11 @@ function Upload() {
               </svg>
               <input 
                 type="url" 
-                placeholder="O pega un enlace de imagen" 
+                placeholder="Pega un enlace de imagen (URL)" 
                 value={imageUrl} 
                 onChange={(e) => handleUrlChange(e.target.value)}
                 className="url-input"
+                required
               />
             </div>
             
@@ -274,10 +227,7 @@ function Upload() {
                 <option value="Perro">🐕 Perro</option>
                 <option value="Gato">🐱 Gato</option>
                 <option value="Conejo">🐰 Conejo</option>
-                <option value="Erizo">🦔 Erizo</option>
                 <option value="Hamster">🐹 Hamster</option>
-                <option value="Loro">🦜 Loro</option>
-                <option value="Otro">🐾 Otro</option>
               </select>
             </div>
 

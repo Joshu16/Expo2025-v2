@@ -19,9 +19,6 @@ function Shelters() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [selectedShelterForPremium, setSelectedShelterForPremium] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isCleaning, setIsCleaning] = useState(false);
-  const [isDebugging, setIsDebugging] = useState(false);
-  const [isEmergencyCleaning, setIsEmergencyCleaning] = useState(false);
 
   useEffect(() => {
     loadShelters();
@@ -201,74 +198,6 @@ function Shelters() {
     setShowPremiumModal(true);
   };
 
-  const handleCleanShelters = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar TODOS los refugios de la base de datos? Esta acción no se puede deshacer.')) {
-      return;
-    }
-
-    try {
-      setIsCleaning(true);
-      console.log('Iniciando limpieza...');
-      
-      // Agregar timeout de seguridad (30 segundos)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La limpieza tardó demasiado')), 30000)
-      );
-      
-      // Función de limpieza removida
-      const deletedCount = 0;
-      
-      console.log(`Limpieza completada: ${deletedCount} refugios eliminados`);
-      alert(`✅ Se eliminaron ${deletedCount} refugios de la base de datos.`);
-      // Recargar la página para mostrar los cambios
-      window.location.reload();
-    } catch (error) {
-      console.error('Error cleaning shelters:', error);
-      if (error.message.includes('Timeout')) {
-        alert('⏰ La limpieza tardó demasiado. Intenta de nuevo o revisa la consola.');
-      } else {
-        alert('❌ Error al limpiar los refugios. Revisa la consola para más detalles.');
-      }
-    } finally {
-      setIsCleaning(false);
-    }
-  };
-
-  const handleDebugShelters = async () => {
-    try {
-      setIsDebugging(true);
-      console.log('Iniciando debug...');
-      // Función de debug removida
-      const result = { message: 'Debug removido' };
-      console.log('Debug completado:', result);
-      alert(`🔍 Debug completado. Revisa la consola para ver los detalles.\n\nTotal: ${result.total} refugios\nStatus: ${Object.keys(result.statusCounts).join(', ')}`);
-    } catch (error) {
-      console.error('Error debugging shelters:', error);
-      alert('❌ Error al hacer debug. Revisa la consola para más detalles.');
-    } finally {
-      setIsDebugging(false);
-    }
-  };
-
-  const handleEmergencyClean = async () => {
-    if (!confirm('🚨 EMERGENCIA: Esto eliminará TODOS los datos de la base de datos (refugios, mascotas, etc.). ¿Estás seguro?')) {
-      return;
-    }
-
-    try {
-      setIsEmergencyCleaning(true);
-      console.log('Iniciando limpieza de emergencia...');
-      // Función de limpieza de emergencia removida
-      console.log('Limpieza de emergencia removida');
-      alert('🎉 Limpieza de emergencia completada. Tu quota de Firebase debería estar liberada.');
-      window.location.reload();
-    } catch (error) {
-      console.error('Error en limpieza de emergencia:', error);
-      alert('❌ Error en limpieza de emergencia. Revisa la consola.');
-    } finally {
-      setIsEmergencyCleaning(false);
-    }
-  };
 
   const handlePremiumSuccess = () => {
     // Recargar refugios después de activar premium
@@ -438,30 +367,6 @@ function Shelters() {
             <p className="page-subtitle">Conecta con organizaciones de rescate animal</p>
           </div>
           <div className="header-actions">
-            <button 
-              className="debug-button"
-              onClick={handleDebugShelters}
-              disabled={isDebugging}
-              title="Analizar refugios en la base de datos"
-            >
-              {isDebugging ? '🔍 Analizando...' : '🔍 Debug BD'}
-            </button>
-            <button 
-              className="clean-button"
-              onClick={handleCleanShelters}
-              disabled={isCleaning}
-              title="Limpiar todos los refugios de la base de datos"
-            >
-              {isCleaning ? '🧹 Limpiando...' : '🧹 Limpiar BD'}
-            </button>
-            <button 
-              className="emergency-button"
-              onClick={handleEmergencyClean}
-              disabled={isEmergencyCleaning}
-              title="EMERGENCIA: Limpiar TODA la base de datos"
-            >
-              {isEmergencyCleaning ? '🚨 Limpiando...' : '🚨 EMERGENCIA'}
-            </button>
           </div>
         </div>
       </header>

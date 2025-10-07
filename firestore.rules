@@ -34,47 +34,39 @@ service cloud.firestore {
     
     // Reglas para usuarios
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
       allow create: if isAuthenticated() && 
-        request.auth.uid == userId &&
-        isValidString(resource.data.name, 100) &&
-        isValidEmail(resource.data.email);
+        request.auth.uid == userId;
     }
     
     // Reglas para refugios
     match /shelters/{shelterId} {
       allow read: if true; // Todos pueden leer refugios
       allow create: if isAuthenticated() && 
-        isOwner(resource.data.ownerId) &&
-        isValidString(resource.data.name, 100) &&
-        isValidString(resource.data.description, 500);
+        request.auth.uid == resource.data.ownerId;
       allow update, delete: if isAuthenticated() && 
-        isOwner(resource.data.ownerId);
+        request.auth.uid == resource.data.ownerId;
     }
     
     // Reglas para mascotas
     match /pets/{petId} {
       allow read: if true; // Todos pueden leer mascotas
       allow create: if isAuthenticated() && 
-        isOwner(resource.data.ownerId) &&
-        isValidString(resource.data.name, 100) &&
-        isValidString(resource.data.description, 1000) &&
-        isValidImageUrl(resource.data.img);
+        request.auth.uid == resource.data.ownerId;
       allow update, delete: if isAuthenticated() && 
-        isOwner(resource.data.ownerId);
+        request.auth.uid == resource.data.ownerId;
     }
     
     // Reglas para categorías
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if isAuthenticated() && 
-        isValidString(resource.data.name, 50);
+      allow write: if isAuthenticated();
     }
     
     // Reglas para favoritos
     match /favorites/{favoriteId} {
       allow read, write: if isAuthenticated() && 
-        isOwner(resource.data.userId);
+        request.auth.uid == resource.data.userId;
       allow create: if isAuthenticated() && 
         request.auth.uid == resource.data.userId;
     }
@@ -82,24 +74,23 @@ service cloud.firestore {
     // Reglas para solicitudes de adopción
     match /adoptionRequests/{requestId} {
       allow read, create: if isAuthenticated() && 
-        isOwner(resource.data.userId);
+        request.auth.uid == resource.data.userId;
       allow update: if isAuthenticated() && 
-        (isOwner(resource.data.userId) || 
-         isOwner(resource.data.ownerId));
+        (request.auth.uid == resource.data.userId || 
+         request.auth.uid == resource.data.ownerId);
     }
     
     // Reglas para conversaciones
     match /conversations/{conversationId} {
       allow read, write: if isAuthenticated() && 
-        isParticipant(resource.data.participants);
+        request.auth.uid in resource.data.participants;
       allow create: if isAuthenticated() && 
         request.auth.uid in resource.data.participants;
     }
     
     // Reglas para mensajes
     match /messages/{messageId} {
-      allow read, write: if isAuthenticated() && 
-        isValidString(resource.data.message, 1000);
+      allow read, write: if isAuthenticated();
       allow create: if isAuthenticated() && 
         request.auth.uid == resource.data.senderId;
     }
@@ -107,7 +98,7 @@ service cloud.firestore {
     // Reglas para notificaciones
     match /notifications/{notificationId} {
       allow read, write: if isAuthenticated() && 
-        isOwner(resource.data.userId);
+        request.auth.uid == resource.data.userId;
       allow create: if isAuthenticated() && 
         request.auth.uid == resource.data.userId;
     }

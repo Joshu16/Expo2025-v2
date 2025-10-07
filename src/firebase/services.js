@@ -410,52 +410,13 @@ export const petService = {
     }
   },
 
-  // Subir imagen (Storage deshabilitado - usando placeholder)
-  uploadPetImage: async (file, petId) => {
-    try {
-      // Storage no disponible en plan gratuito - usar placeholder
-      console.log('Storage no disponible - usando imagen placeholder');
-      
-      // Generar URL placeholder basada en el tipo de archivo
-      const placeholderImages = {
-        'image/jpeg': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop',
-        'image/png': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop',
-        'image/webp': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop'
-      };
-      
-      const placeholderUrl = placeholderImages[file.type] || placeholderImages['image/jpeg'];
-      return placeholderUrl;
-    } catch (error) {
-      console.error('Error with image placeholder:', error);
-      // Fallback a imagen por defecto
-      return 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop';
-    }
-  },
 
   // Crear nueva mascota
-  createPet: async (petData, imageFile = null) => {
+  createPet: async (petData) => {
     try {
-      // Si hay una imagen, intentar subirla a Firebase Storage primero
-      let finalImageUrl = petData.img || '';
-      
-      if (imageFile && !petData.img) {
-        try {
-          console.log('Attempting to upload image to Firebase Storage...');
-          const imageUrl = await petService.uploadPetImage(imageFile, 'temp-' + Date.now());
-          finalImageUrl = imageUrl;
-          console.log('Image uploaded successfully:', imageUrl);
-        } catch (imageError) {
-          console.error('Firebase Storage failed, using placeholder:', imageError);
-          // Si falla Firebase Storage, usar una URL placeholder
-          finalImageUrl = 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop';
-          console.log('Using placeholder image:', finalImageUrl);
-        }
-      }
-
-      // Crear el documento de la mascota con la imagen final
+      // Crear el documento de la mascota
       const docRef = await addDoc(collection(db, 'pets'), {
         ...petData,
-        img: finalImageUrl,
         createdAt: new Date().toISOString(),
         status: 'available',
         adoptionRequests: 0,
@@ -937,44 +898,6 @@ export const adoptionRequestService = {
     }
   },
 
-  // Limpiar solicitudes rechazadas antiguas (más de 30 días)
-  cleanOldRejectedRequests: async () => {
-    try {
-      console.log('adoptionRequestService.cleanOldRejectedRequests called');
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
-
-      const q = query(
-        collection(db, 'adoptionRequests'),
-        where('status', '==', 'rejected'),
-        where('updatedAt', '<', thirtyDaysAgoISO)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const oldRejectedRequests = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      console.log(`Found ${oldRejectedRequests.length} old rejected requests to clean`);
-
-      const deletePromises = oldRejectedRequests.map(req => {
-        console.log('Deleting old rejected request:', req.id);
-        return deleteDoc(doc(db, 'adoptionRequests', req.id));
-      });
-
-      if (deletePromises.length > 0) {
-        await Promise.all(deletePromises);
-        console.log(`✅ Cleaned ${deletePromises.length} old rejected requests`);
-      }
-
-      return oldRejectedRequests.length;
-    } catch (error) {
-      console.error('Error cleaning old rejected requests:', error);
-      throw error;
-    }
-  },
 
   // Obtener solicitudes pendientes para una mascota específica
   getPendingRequestsForPet: async (petId) => {
@@ -1289,20 +1212,6 @@ export const shelterService = {
     }
   },
 
-  // Subir imagen del refugio (Storage deshabilitado - usando placeholder)
-  uploadShelterImage: async (file, shelterId) => {
-    try {
-      // Storage no disponible en plan gratuito - usar placeholder
-      console.log('Storage no disponible - usando imagen placeholder para refugio');
-      
-      // Imagen placeholder para refugios
-      const shelterPlaceholder = 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?q=80&w=400&auto=format&fit=crop';
-      return shelterPlaceholder;
-    } catch (error) {
-      console.error('Error with shelter image placeholder:', error);
-      return 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?q=80&w=400&auto=format&fit=crop';
-    }
-  },
 
   // Simular revisión del refugio después de subir primera mascota
   simulateShelterReview: async (shelterId) => {

@@ -19,8 +19,6 @@ function Tracking() {
   useEffect(() => {
     if (user?.uid) {
       loadRequests();
-      // Limpiar solicitudes rechazadas antiguas al cargar la página
-      cleanOldRejectedRequests();
     } else {
       setLoading(false);
     }
@@ -102,19 +100,6 @@ function Tracking() {
     }
   };
 
-  const cleanOldRejectedRequests = async () => {
-    try {
-      console.log('Cleaning old rejected requests...');
-      const cleanedCount = await adoptionRequestService.cleanOldRejectedRequests();
-      if (cleanedCount > 0) {
-        console.log(`✅ Cleaned ${cleanedCount} old rejected requests`);
-        // Recargar datos después de limpiar
-        await loadRequests();
-      }
-    } catch (error) {
-      console.error('Error cleaning old rejected requests:', error);
-    }
-  };
 
   const getStatusColor = (status) => {
     switch (status) {

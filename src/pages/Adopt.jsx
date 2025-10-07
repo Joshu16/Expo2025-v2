@@ -20,17 +20,17 @@ function Adopt() {
     message: ""
   });
   const [completed, setCompleted] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [hasExistingRequest, setHasExistingRequest] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     if (petFromState) {
       // Si la mascota viene del estado, usarla directamente
       setPet(petFromState);
       setLoading(false);
-      checkFavoriteStatus(petFromState.id);
       checkExistingRequest(petFromState.id);
+      checkFavoriteStatus(petFromState.id);
       
       // Verificar si es la propia mascota del usuario
       if (user?.uid && petFromState.ownerId === user.uid) {
@@ -63,8 +63,8 @@ function Adopt() {
         }
         
         setPet(petData);
-        checkFavoriteStatus(petData.id);
         checkExistingRequest(petData.id);
+        checkFavoriteStatus(petData.id);
       } else {
         console.log('Pet not found in Firebase');
         navigate("/");
@@ -77,16 +77,6 @@ function Adopt() {
     }
   };
 
-  const checkFavoriteStatus = async (petId) => {
-    if (!user?.uid) return;
-    
-    try {
-      const favoriteStatus = await favoriteService.isFavorite(user.uid, petId);
-      setIsFavorite(favoriteStatus);
-    } catch (error) {
-      console.error("Error checking favorite status:", error);
-    }
-  };
 
   const checkExistingRequest = async (petId) => {
     if (!user?.uid) return;
@@ -103,8 +93,15 @@ function Adopt() {
     }
   };
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const checkFavoriteStatus = async (petId) => {
+    if (!user?.uid) return;
+    
+    try {
+      const favoriteStatus = await favoriteService.isFavorite(user.uid, petId);
+      setIsFavorite(favoriteStatus);
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+    }
   };
 
   const toggleFavorite = async () => {
@@ -130,6 +127,11 @@ function Adopt() {
       alert("Error al actualizar favoritos. Inténtalo de nuevo.");
     }
   };
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
