@@ -35,6 +35,15 @@ function Chat() {
     };
   }, [conversationId, user]);
 
+  // Efecto para hacer scroll automático cuando cambian los mensajes
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [messages]);
+
   const loadMessages = async () => {
     try {
       setLoading(true);
@@ -44,7 +53,11 @@ function Chat() {
       unsubscribeRef.current = chatService.subscribeToMessages(conversationId, (newMessages) => {
         console.log('Chat: Received messages:', newMessages);
         setMessages(newMessages);
-        scrollToBottom();
+        
+        // Scroll al final después de que se actualice el DOM
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
         
         // Marcar mensajes como leídos
         chatService.markMessagesAsRead(conversationId, user.uid);
@@ -66,8 +79,20 @@ function Chat() {
       if (currentConversation) {
         const otherUserId = currentConversation.participants.find(id => id !== user.uid);
         if (otherUserId) {
-          const otherUserData = await userService.getUserProfile(otherUserId);
-          setOtherUser(otherUserData || { uid: otherUserId, name: 'Usuario' });
+          try {
+            const otherUserData = await userService.getUserProfile(otherUserId);
+            console.log('Chat: Other user loaded:', otherUserData);
+            setOtherUser(otherUserData || { 
+              uid: otherUserId, 
+              name: `Usuario ${otherUserId.substring(0, 6)}` 
+            });
+          } catch (error) {
+            console.error('Error loading other user profile:', error);
+            setOtherUser({ 
+              uid: otherUserId, 
+              name: `Usuario ${otherUserId.substring(0, 6)}` 
+            });
+          }
         }
       }
     } catch (error) {
@@ -86,6 +111,11 @@ function Chat() {
       await chatService.sendMessage(conversationId, user.uid, newMessage.trim());
       console.log('Chat: Message sent successfully');
       setNewMessage('');
+      
+      // Scroll al final después de enviar mensaje
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Error al enviar el mensaje');
@@ -95,7 +125,13 @@ function Chat() {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+    }
   };
 
   const formatTime = (timestamp) => {

@@ -35,12 +35,25 @@ function Conversations() {
       const enrichedConversations = await Promise.all(
         conversationsData.map(async (conversation) => {
           const otherUserId = conversation.participants.find(id => id !== user.uid);
-          const otherUser = otherUserId ? await userService.getUserProfile(otherUserId) : null;
+          let otherUser = null;
+          
+          if (otherUserId) {
+            try {
+              otherUser = await userService.getUserProfile(otherUserId);
+              console.log('Other user loaded:', otherUser);
+            } catch (error) {
+              console.error('Error loading other user:', error);
+            }
+          }
+          
           const pet = conversation.petId ? await petService.getPetById(conversation.petId) : null;
           
           return {
             ...conversation,
-            otherUser: otherUser || { uid: otherUserId, name: 'Usuario' },
+            otherUser: otherUser || { 
+              uid: otherUserId, 
+              name: otherUserId ? `Usuario ${otherUserId.substring(0, 6)}` : 'Usuario Desconocido' 
+            },
             pet
           };
         })
