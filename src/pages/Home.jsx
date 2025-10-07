@@ -371,38 +371,6 @@ function Home() {
     navigate("/notifications");
   };
 
-  const toggleFavorite = async (pet, e) => {
-    e.stopPropagation();
-    
-    if (!user?.uid) {
-      alert("Debes iniciar sesión para agregar favoritos");
-      return;
-    }
-
-    try {
-      const isCurrentlyFavorite = favorites.some(fav => fav.petId === pet.id);
-      
-      if (isCurrentlyFavorite) {
-        // Remover de favoritos
-        await favoriteService.removeFavorite(user.uid, pet.id);
-        setFavorites(prev => prev.filter(fav => fav.petId !== pet.id));
-        console.log('Pet removed from favorites');
-      } else {
-        // Agregar a favoritos
-        await favoriteService.addFavorite(user.uid, pet.id);
-        setFavorites(prev => [...prev, { petId: pet.id, userId: user.uid, createdAt: new Date().toISOString() }]);
-        console.log('Pet added to favorites');
-      }
-    } catch (error) {
-      console.error("Error updating favorites:", error);
-      alert("Error al actualizar favoritos. Inténtalo de nuevo.");
-    }
-  };
-
-  const isFavorite = (pet) => {
-    return favorites.some(fav => fav.petId === pet.id);
-  };
-
   if (loading) {
     return (
       <div className="container" style={{ paddingBottom: '90px' }}>
