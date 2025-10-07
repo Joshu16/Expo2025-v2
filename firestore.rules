@@ -111,7 +111,8 @@ service cloud.firestore {
         request.auth.uid == resource.data.ownerId &&
         isValidPetData(request.resource.data);
       allow delete: if isAuthenticated() && 
-        request.auth.uid == resource.data.ownerId;
+        (request.auth.uid == resource.data.ownerId || 
+         request.auth.uid == resource.data.userId);
     }
     
     // Reglas para categorías
