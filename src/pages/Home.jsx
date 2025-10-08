@@ -76,6 +76,12 @@ function Home() {
       
       // Mostrar premium primero, luego regulares
       const allShelters = [...premiumShelters, ...regularShelters];
+      
+      // Debug: Verificar orden de refugios
+      console.log('🏠 Refugios premium:', premiumShelters.map(s => ({ name: s.name, isPremium: s.isPremium })));
+      console.log('🏠 Refugios regulares:', regularShelters.map(s => ({ name: s.name, isPremium: s.isPremium })));
+      console.log('🏠 Orden final:', allShelters.map(s => ({ name: s.name, isPremium: s.isPremium })));
+      
       setShelters(allShelters);
       console.log('🏠 Refugios cargados:', allShelters.length, 'total');
     } catch (error) {
