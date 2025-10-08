@@ -279,41 +279,41 @@ function Adopt() {
               )}
               <div className="pet-attributes">
                 <div className="attribute-item">
-                  <span className="attribute-label">Tipo:</span>
-                  <span className="attribute-value">{pet.type || 'Mascota'}</span>
+                  <div className="attribute-label">Tipo</div>
+                  <div className="attribute-value">{pet.type || 'Mascota'}</div>
                 </div>
                 <div className="attribute-item">
-                  <span className="attribute-label">Raza:</span>
-                  <span className="attribute-value">{pet.breed}</span>
+                  <div className="attribute-label">Raza</div>
+                  <div className="attribute-value">{pet.breed}</div>
                 </div>
                 <div className="attribute-item">
-                  <span className="attribute-label">Edad:</span>
-                  <span className="attribute-value">{pet.age}</span>
+                  <div className="attribute-label">Edad</div>
+                  <div className="attribute-value">{pet.age}</div>
                 </div>
                 <div className="attribute-item">
-                  <span className="attribute-label">Género:</span>
-                  <span className="attribute-value">{pet.gender}</span>
+                  <div className="attribute-label">Género</div>
+                  <div className="attribute-value">{pet.gender}</div>
                 </div>
                 <div className="attribute-item">
-                  <span className="attribute-label">Ubicación:</span>
-                  <span className="attribute-value">📍 {pet.location}</span>
+                  <div className="attribute-label">Ubicación</div>
+                  <div className="attribute-value">📍 {pet.location}</div>
                 </div>
                 {pet.vaccinated !== undefined && (
                   <div className="attribute-item">
-                    <span className="attribute-label">Vacunado:</span>
-                    <span className="attribute-value">{pet.vaccinated ? 'Sí' : 'No'}</span>
+                    <div className="attribute-label">Vacunado</div>
+                    <div className="attribute-value">{pet.vaccinated ? 'Sí' : 'No'}</div>
                   </div>
                 )}
                 {pet.sterilized !== undefined && (
                   <div className="attribute-item">
-                    <span className="attribute-label">Esterilizado:</span>
-                    <span className="attribute-value">{pet.sterilized ? 'Sí' : 'No'}</span>
+                    <div className="attribute-label">Esterilizado</div>
+                    <div className="attribute-value">{pet.sterilized ? 'Sí' : 'No'}</div>
                   </div>
                 )}
                 {pet.specialNeeds && (
                   <div className="attribute-item">
-                    <span className="attribute-label">Necesidades especiales:</span>
-                    <span className="attribute-value">{pet.specialNeeds}</span>
+                    <div className="attribute-label">Necesidades especiales</div>
+                    <div className="attribute-value">{pet.specialNeeds}</div>
                   </div>
                 )}
               </div>
