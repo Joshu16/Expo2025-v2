@@ -23,6 +23,7 @@ import ShelterRegister from "./ShelterRegister.jsx";
 import ShelterAdmin from "./ShelterAdmin.jsx";
 import Notifications from "./Notifications.jsx";
 import AdoptionRequests from "./AdoptionRequests.jsx";
+import Settings from "./Settings.jsx";
 
 // RUTA PROTEGIDA (definir antes de usar)
 const ProtectedRoute = ({ element, user, loading }) => {
@@ -101,6 +102,7 @@ function App() {
       <Route path="/shelter-admin" element={<ProtectedRoute element={<ShelterAdmin />} user={user} loading={loading} />} />
       <Route path="/notifications" element={<ProtectedRoute element={<Notifications />} user={user} loading={loading} />} />
       <Route path="/adoption-requests" element={<ProtectedRoute element={<AdoptionRequests />} user={user} loading={loading} />} />
+      <Route path="/settings" element={<ProtectedRoute element={<Settings />} user={user} loading={loading} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       

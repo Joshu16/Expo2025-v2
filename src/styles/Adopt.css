@@ -216,6 +216,64 @@
     line-height: 1.5;
   }
 
+  .pet-description {
+    margin: 20px 0;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
+  }
+
+  .pet-description h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .pet-description p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .pet-attributes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  .attribute-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .attribute-item:last-child {
+    border-bottom: none;
+  }
+
+  .attribute-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .attribute-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    text-align: right;
+  }
+
   /* Estilos para la sección de completado */
   .success-icon {
     font-size: 48px;
@@ -295,6 +353,21 @@
     
     .pet-info h1 {
       text-align: center;
+    }
+
+    .pet-attributes {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .attribute-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .attribute-value {
+      text-align: left;
     }
     
     .completion-actions {

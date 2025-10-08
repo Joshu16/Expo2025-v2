@@ -42,14 +42,35 @@ function Conversations() {
               otherUser = await userService.getUserProfile(otherUserId);
               console.log('Other user loaded:', otherUser);
               
-              // Si no tiene nombre, usar displayName o email
-              if (otherUser && !otherUser.name) {
-                otherUser.name = otherUser.displayName || 
+              // Mejorar la lógica para obtener el nombre del usuario
+              if (otherUser) {
+                // Priorizar el nombre del perfil, luego displayName, luego email
+                otherUser.name = otherUser.name || 
+                                otherUser.displayName || 
                                 otherUser.email?.split('@')[0] || 
-                                'Usuario';
+                                'Usuario Anónimo';
+              } else {
+                // Si no se pudo cargar el perfil, intentar obtener información básica del usuario
+                try {
+                  // Aquí podrías hacer una consulta adicional si tienes un método para obtener info básica
+                  otherUser = { 
+                    uid: otherUserId, 
+                    name: 'Usuario Anónimo'
+                  };
+                } catch (basicError) {
+                  console.error('Error loading basic user info:', basicError);
+                  otherUser = { 
+                    uid: otherUserId, 
+                    name: 'Usuario Anónimo'
+                  };
+                }
               }
             } catch (error) {
               console.error('Error loading other user:', error);
+              otherUser = { 
+                uid: otherUserId, 
+                name: 'Usuario Anónimo'
+              };
             }
           }
           
@@ -59,7 +80,7 @@ function Conversations() {
             ...conversation,
             otherUser: otherUser || { 
               uid: otherUserId, 
-              name: 'Usuario' // Solo "Usuario" como fallback, no el ID
+              name: 'Usuario Anónimo'
             },
             pet
           };

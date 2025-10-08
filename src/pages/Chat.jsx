@@ -83,22 +83,27 @@ function Chat() {
             const otherUserData = await userService.getUserProfile(otherUserId);
             console.log('Chat: Other user loaded:', otherUserData);
             
-            // Si no tiene nombre, usar displayName o email
-            if (otherUserData && !otherUserData.name) {
-              otherUserData.name = otherUserData.displayName || 
+            // Mejorar la lógica para obtener el nombre del usuario
+            if (otherUserData) {
+              // Priorizar el nombre del perfil, luego displayName, luego email
+              otherUserData.name = otherUserData.name || 
+                                  otherUserData.displayName || 
                                   otherUserData.email?.split('@')[0] || 
-                                  'Usuario';
+                                  'Usuario Anónimo';
+            } else {
+              // Si no se pudo cargar el perfil, usar fallback
+              otherUserData = { 
+                uid: otherUserId, 
+                name: 'Usuario Anónimo'
+              };
             }
             
-            setOtherUser(otherUserData || { 
-              uid: otherUserId, 
-              name: 'Usuario' // Solo "Usuario" como fallback, no el ID
-            });
+            setOtherUser(otherUserData);
           } catch (error) {
             console.error('Error loading other user profile:', error);
             setOtherUser({ 
               uid: otherUserId, 
-              name: 'Usuario' // Solo "Usuario" como fallback, no el ID
+              name: 'Usuario Anónimo'
             });
           }
         }
@@ -196,7 +201,7 @@ function Chat() {
             {otherUser?.name ? otherUser.name.charAt(0).toUpperCase() : 'U'}
           </div>
           <div className="user-details">
-            <h3>{otherUser?.name || 'Usuario'}</h3>
+            <h3>{otherUser?.name || 'Usuario Anónimo'}</h3>
             <p>En línea</p>
           </div>
         </div>
@@ -246,7 +251,7 @@ function Chat() {
                 <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
                   {!isOwn && (
                     <div className="message-sender">
-                      {message.senderName || 'Usuario'}
+                      {message.senderName || otherUser?.name || 'Usuario Anónimo'}
                     </div>
                   )}
                   <div className="bubble-content">
