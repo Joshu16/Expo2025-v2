@@ -29,15 +29,15 @@ service cloud.firestore {
     
     // Función auxiliar para validar URL de imagen
     function isValidImageUrl(url) {
-      return url is string && url.matches('https://.*');
+      return url is string && url.matches('https?://.*');
     }
     
     // Función para validar datos de mascota
     function isValidPetData(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.type is string && data.type in ['perro', 'gato', 'otro'] &&
+             data.type is string && data.type in ['Perro', 'Gato', 'Conejo', 'Hamster'] &&
              data.location is string && data.location.size() > 0 &&
-             data.img is string && data.img.matches('https://.*') &&
+             data.img is string && data.img.matches('https?://.*') &&
              data.ownerId is string && data.ownerId.size() > 0;
     }
     

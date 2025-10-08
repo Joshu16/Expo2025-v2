@@ -1382,77 +1382,215 @@ input:focus, textarea:focus, select:focus {
 
 .shelters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 32px;
+  margin-top: 32px;
+  max-width: 100%;
+  padding: 0 8px;
+}
+
+@media (max-width: 1200px) {
+  .shelters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .shelters-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0;
+  }
 }
 
 .shelter-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .shelter-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   border-color: var(--primary-color);
 }
 
 .shelter-card.premium {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border: 2px solid var(--primary-color);
-  box-shadow: var(--shadow-md);
+  background: var(--bg-card);
+  border: 2px solid #FFD700;
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.2);
+}
+
+.shelter-card.premium:hover {
+  box-shadow: 0 12px 32px rgba(255, 215, 0, 0.3);
+  border-color: #FFA500;
 }
 
 .shelter-image-wrapper {
   position: relative;
   height: 180px;
   overflow: hidden;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .shelter-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  transition: all 0.3s ease;
+  filter: brightness(0.95) contrast(1.05) saturate(1.1);
+  display: block;
+}
+
+/* Mejorar la distribución de imágenes pequeñas */
+.shelter-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Si la imagen es muy pequeña, la centramos y la hacemos más grande */
+.shelter-image-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 0.1;
+  z-index: 1;
+}
+
+.shelter-card:hover .shelter-image {
+  transform: scale(1.05);
+  filter: brightness(1) contrast(1.1) saturate(1.2);
+}
+
+.shelter-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg, 
+    transparent 0%, 
+    transparent 60%, 
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.shelter-card:hover .shelter-image-overlay {
+  opacity: 1;
 }
 
 .premium-badge {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #333;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #000;
   padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
+  z-index: 3;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.premium-badge::before {
+  content: '⭐';
+  margin-right: 4px;
+  font-size: 10px;
 }
 
 .shelter-content {
   padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .shelter-name {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 8px 0;
+  margin: 0;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shelter-name::before {
+  content: '🏠';
+  font-size: 16px;
 }
 
 .shelter-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-secondary);
   font-size: 14px;
-  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.shelter-location svg {
+  width: 14px;
+  height: 14px;
+  color: #ff6b6b;
+  flex-shrink: 0;
+}
+
+.shelter-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.shelter-stat {
+  background: var(--bg-secondary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
+  border: 1px solid var(--border-color);
 }
+
+.shelter-stat svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Regla duplicada eliminada */
 
 .shelter-description {
   color: var(--text-secondary);
@@ -1541,6 +1679,89 @@ input:focus, textarea:focus, select:focus {
   overflow: hidden;
 }
 
+/* Estilo sutil para mascotas de refugios premium - ALTA PRIORIDAD */
+.pet-card.featured {
+  background: var(--bg-card) !important;
+  border: 2px solid #FFD700 !important;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 215, 0, 0.2) !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.pet-card.featured::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 140, 0, 0.02) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pet-card.featured::after {
+  content: "⭐ PREMIUM";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 215, 0, 0.9);
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pet-card.featured:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 215, 0, 0.4) !important;
+  border-color: #FFA500 !important;
+}
+
+.pet-card.featured:hover::before {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 140, 0, 0.04) 100%);
+}
+
+/* Texto normal para tarjetas premium - sutil */
+.pet-card.featured .pet-name,
+.pet-card.featured .pet-details,
+.pet-card.featured .pet-age,
+.pet-card.featured .pet-location,
+.pet-card.featured .owner-label,
+.pet-card.featured .owner-name {
+  color: var(--text-primary) !important;
+  position: relative;
+  z-index: 2;
+}
+
+/* Modo oscuro sutil para tarjetas premium */
+[data-theme="dark"] .pet-card.featured {
+  background: var(--bg-card) !important;
+  border: 2px solid #FFD700 !important;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 215, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .pet-card.featured .pet-name,
+[data-theme="dark"] .pet-card.featured .pet-details,
+[data-theme="dark"] .pet-card.featured .pet-age,
+[data-theme="dark"] .pet-card.featured .pet-location,
+[data-theme="dark"] .pet-card.featured .owner-label,
+[data-theme="dark"] .pet-card.featured .owner-name {
+  color: var(--text-primary) !important;
+}
+
+/* Limpiar reglas duplicadas - las de arriba tienen prioridad */
+
 .pets-grid.premium-layout .pet-card.featured::before {
   content: "⭐ PREMIUM";
   position: absolute;
@@ -1584,7 +1805,7 @@ input:focus, textarea:focus, select:focus {
   color: var(--text-primary) !important;
 }
 
-[data-theme="dark"] .pet-card,
+[data-theme="dark"] .pet-card:not(.featured),
 [data-theme="dark"] .shelter-card {
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;
@@ -1604,13 +1825,13 @@ input:focus, textarea:focus, select:focus {
   color: var(--text-tertiary) !important;
 }
 
-[data-theme="dark"] .pet-card {
+[data-theme="dark"] .pet-card:not(.featured) {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-md);
 }
 
-[data-theme="dark"] .pet-card:hover {
+[data-theme="dark"] .pet-card:not(.featured):hover {
   border-color: var(--border-hover);
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
@@ -1834,4 +2055,20 @@ input:focus, textarea:focus, select:focus {
   .option-label {
     font-size: 13px;
   }
+}
+
+/* REGLA DE MÁXIMA PRIORIDAD PARA TARJETAS PREMIUM */
+.pet-card.featured {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
+  border: 2px solid #FFD700 !important;
+  box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3) !important;
+}
+
+.pet-card.featured .pet-name,
+.pet-card.featured .pet-details,
+.pet-card.featured .pet-age,
+.pet-card.featured .pet-location,
+.pet-card.featured .owner-label,
+.pet-card.featured .owner-name {
+  color: #000000 !important;
 }

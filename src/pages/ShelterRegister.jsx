@@ -118,7 +118,7 @@ function ShelterRegister() {
       setSelectedShelterForPremium(shelterId);
     } catch (error) {
       console.error("Error creating shelter", error);
-      setError("Error al registrar el refugio. Inténtalo de nuevo.");
+      setError("❌ Error al registrar el refugio: " + error.message);
     } finally {
       setIsSubmitting(false);
     }

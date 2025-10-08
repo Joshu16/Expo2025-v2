@@ -503,6 +503,55 @@ export const petService = {
     }
   },
 
+  // Asociar mascotas de un usuario con su refugio premium
+  associatePetsWithPremiumShelter: async (userId, shelterId) => {
+    try {
+      console.log('petService.associatePetsWithPremiumShelter called for userId:', userId, 'shelterId:', shelterId);
+      
+      // Obtener todas las mascotas del usuario
+      const userPets = await petService.getPetsByOwner(userId);
+      console.log('Mascotas del usuario encontradas:', userPets.length);
+      console.log('Detalles de las mascotas:', userPets.map(pet => ({
+        id: pet.id,
+        name: pet.name,
+        shelterId: pet.shelterId,
+        shelterName: pet.shelterName
+      })));
+      
+      // Obtener información del refugio
+      const shelter = await shelterService.getShelterById(shelterId);
+      if (!shelter) {
+        throw new Error('Refugio no encontrado');
+      }
+      
+      console.log('Refugio encontrado:', shelter.name, 'isPremium:', shelter.isPremium);
+      
+      // Actualizar TODAS las mascotas del usuario, independientemente de si ya tienen refugio
+      console.log('Actualizando TODAS las mascotas del usuario con el refugio premium');
+      
+      const updatePromises = userPets.map(async (pet) => {
+        console.log('Actualizando mascota:', pet.name, 'con refugio:', shelter.name);
+        try {
+          await petService.updatePet(pet.id, {
+            shelterId: shelterId,
+            shelterName: shelter.name
+          });
+          console.log('✅ Mascota actualizada exitosamente:', pet.name);
+        } catch (error) {
+          console.error('❌ Error actualizando mascota:', pet.name, error);
+        }
+      });
+      
+      await Promise.all(updatePromises);
+      console.log('✅ Mascotas asociadas con refugio premium exitosamente');
+      
+      return { updated: userPets.length };
+    } catch (error) {
+      console.error('Error associating pets with premium shelter:', error);
+      throw error;
+    }
+  },
+
   // Eliminar mascota
   deletePet: async (petId) => {
     try {
@@ -1225,7 +1274,7 @@ export const shelterService = {
       const querySnapshot = await getDocs(q);
       const shelters = querySnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(shelter => shelter.status === 'approved')
+        .filter(shelter => shelter.status === 'approved' || shelter.status === 'active' || shelter.status === 'pending')
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       console.log('Premium shelters loaded from Firestore:', shelters);
       return shelters;
@@ -1246,7 +1295,7 @@ export const shelterService = {
       const querySnapshot = await getDocs(q);
       const shelters = querySnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(shelter => shelter.status === 'approved')
+        .filter(shelter => shelter.status === 'approved' || shelter.status === 'active' || shelter.status === 'pending')
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       console.log('Regular shelters loaded from Firestore:', shelters);
       return shelters;

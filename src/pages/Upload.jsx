@@ -52,6 +52,20 @@ function Upload() {
           // Cargar refugios del usuario
           const userShelters = await shelterService.getSheltersByOwner(user.uid);
           setShelters(userShelters);
+          
+          // Si el usuario tiene refugios, marcar automáticamente como mascota de refugio
+          if (userShelters.length > 0) {
+            setIsShelterPet(true);
+            // Si solo tiene un refugio, seleccionarlo automáticamente
+            if (userShelters.length === 1) {
+              const shelter = userShelters[0];
+              setPetData(prev => ({
+                ...prev,
+                shelterId: shelter.id,
+                shelterName: shelter.name
+              }));
+            }
+          }
         } catch (error) {
           console.error("Error loading data:", error);
         }
@@ -93,19 +107,19 @@ function Upload() {
   const handleSavePet = async () => {
     // Validaciones mejoradas
     if (!petData.name.trim()) {
-      alert('El nombre de la mascota es obligatorio');
+      alert('❌ El nombre de la mascota es obligatorio');
       return;
     }
     if (!petData.type) {
-      alert('Debes seleccionar el tipo de mascota');
+      alert('❌ Debes seleccionar el tipo de mascota (Perro, Gato, Conejo o Hamster)');
       return;
     }
     if (!petData.location.trim()) {
-      alert('La ubicación es obligatoria');
+      alert('❌ La ubicación es obligatoria');
       return;
     }
     if (!imageUrl.trim()) {
-      alert('Debes proporcionar un enlace de imagen');
+      alert('❌ Debes proporcionar un enlace de imagen válido');
       return;
     }
 
@@ -134,11 +148,11 @@ function Upload() {
       const petId = await petService.createPet(newPet);
       
       console.log('Pet created successfully with ID:', petId);
-      alert('Mascota subida correctamente');
+      alert('✅ Mascota subida correctamente');
       navigate('/');
     } catch (error) {
       console.error('Error saving pet:', error);
-      alert('Error al subir la mascota: ' + error.message);
+      alert('❌ Error al subir la mascota: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -177,24 +191,31 @@ function Upload() {
             <div className="quick-actions">
               <button 
                 type="button"
-                onClick={() => setImageUrl('https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=400&auto=format&fit=crop')}
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop&crop=center')}
                 className="quick-btn"
               >
                 🐕 Perro
               </button>
               <button 
                 type="button"
-                onClick={() => setImageUrl('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=400&auto=format&fit=crop')}
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=400&h=400&fit=crop&crop=center')}
                 className="quick-btn"
               >
                 🐱 Gato
               </button>
               <button 
                 type="button"
-                onClick={() => setImageUrl('https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=400&auto=format&fit=crop')}
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=400&fit=crop&crop=center')}
                 className="quick-btn"
               >
                 🐰 Conejo
+              </button>
+              <button 
+                type="button"
+                onClick={() => setImageUrl('https://images.unsplash.com/photo-1517849845537-4d257902454a?w=400&h=400&fit=crop&crop=center')}
+                className="quick-btn"
+              >
+                🐹 Hamster
               </button>
             </div>
           </div>

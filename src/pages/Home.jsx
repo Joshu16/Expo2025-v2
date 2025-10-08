@@ -77,7 +77,7 @@ function Home() {
       // Mostrar premium primero, luego regulares
       const allShelters = [...premiumShelters, ...regularShelters];
       setShelters(allShelters);
-      console.log('Shelters loaded:', allShelters);
+      console.log('🏠 Refugios cargados:', allShelters.length, 'total');
     } catch (error) {
       console.error('Error loading shelters:', error);
     }
@@ -96,16 +96,51 @@ function Home() {
       if (userSheltersData.length > 0) {
         const hasPremium = userSheltersData.some(shelter => shelter.isPremium);
         setUserType(hasPremium ? 'premium' : 'shelter');
+        console.log('User type determined:', hasPremium ? 'premium' : 'shelter');
       } else {
         setUserType('user');
+        console.log('User type determined: user');
       }
       
       console.log('User shelters loaded:', userSheltersData);
-      console.log('User type determined:', userType);
     } catch (error) {
       console.error('Error loading user shelters:', error);
     }
   };
+
+  // Función para recargar todos los datos
+  const reloadAllData = async () => {
+    console.log('🔄 Recargando todos los datos...');
+    await loadShelters();
+    await loadUserShelters();
+    const petsData = await petService.getPets();
+    setPets(petsData);
+    console.log('✅ Datos recargados');
+  };
+
+  // Función para verificar si un refugio es premium
+  const isShelterPremium = async (shelterId) => {
+    if (!shelterId) return false;
+    
+    try {
+      const shelter = await shelterService.getShelterById(shelterId);
+      return shelter && shelter.isPremium;
+    } catch (error) {
+      console.error('Error checking shelter premium status:', error);
+      return false;
+    }
+  };
+
+  // Efecto para recargar datos cuando se regresa a la página
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 Página enfocada, recargando datos...');
+      reloadAllData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -138,11 +173,14 @@ function Home() {
           // Cargar favoritos
           await loadFavorites();
           
-          // Cargar refugios
+          // Cargar refugios primero
           await loadShelters();
           
           // Cargar refugios del usuario para determinar tipo
           await loadUserShelters();
+
+          // Esperar un poco para asegurar que los refugios se carguen
+          await new Promise(resolve => setTimeout(resolve, 100));
 
           // Cargar mascotas
           const petsData = await petService.getPets();
@@ -615,10 +653,26 @@ function Home() {
         </div>
 
         <div className={`pets-grid ${userType === 'user' ? 'single-column' : userType === 'shelter' ? 'two-columns' : 'premium-layout'}`}>
-          {filteredPets.map((pet, index) => (
+          {filteredPets.map((pet, index) => {
+            // Verificar si la mascota pertenece a un refugio premium
+            let isPremiumPet = false;
+            
+            // Verificar si la mascota tiene shelterId
+            if (pet.shelterId) {
+              // Buscar el refugio en la lista cargada
+              const shelterInfo = shelters.find(s => s.id === pet.shelterId);
+              isPremiumPet = shelterInfo && shelterInfo.isPremium;
+              
+              // Debug: Mascota detectada como premium
+              console.log(`✅ ${pet.name} es premium:`, isPremiumPet);
+            }
+            
+            const isFeatured = isPremiumPet;
+            
+            return (
             <div
               key={index}
-              className={`pet-card ${userType === 'premium' && index < 2 ? 'featured' : ''}`}
+              className={`pet-card ${isFeatured ? 'featured' : ''}`}
               onClick={() => handleCardClick(pet)}
             >
               <div className="pet-image-wrapper">
@@ -649,7 +703,8 @@ function Home() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {filteredPets.length === 0 && (
@@ -669,20 +724,11 @@ function Home() {
             <div className="section-header">
               <div className="section-title-row">
                 <h2 className="section-title">
-                  {showOnlyShelters ? 'Refugios' : 'Refugios destacados'}
+                  Refugios
                 </h2>
                 <span className="pets-count">{shelters.length} refugios</span>
               </div>
               <div className="shelters-controls">
-                <button 
-                  className={`shelters-toggle ${showOnlyShelters ? 'active' : ''}`}
-                  onClick={() => setShowOnlyShelters(!showOnlyShelters)}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-                  </svg>
-                  {showOnlyShelters ? 'Ver mascotas' : 'Solo refugios'}
-                </button>
                 <button 
                   className="view-all-shelters"
                   onClick={() => navigate('/shelters')}
@@ -693,7 +739,7 @@ function Home() {
             </div>
 
             <div className="shelters-grid">
-              {(showOnlyShelters ? filteredShelters : shelters.slice(0, 4)).map((shelter, index) => (
+              {shelters.slice(0, 4).map((shelter, index) => (
                 <div
                   key={shelter.id || index}
                   className={`shelter-card ${shelter.isPremium ? 'premium' : ''}`}
@@ -701,21 +747,39 @@ function Home() {
                 >
                   <div className="shelter-image-wrapper">
                     <img 
-                      src={shelter.image || '/default-shelter.jpg'} 
+                      src={shelter.image || 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=225&fit=crop&crop=center'} 
                       alt={shelter.name} 
                       className="shelter-image" 
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=225&fit=crop&crop=center';
+                      }}
                     />
+                    <div className="shelter-image-overlay"></div>
                     {shelter.isPremium && (
-                      <div className="premium-badge">⭐ Premium</div>
+                      <div className="premium-badge">Premium</div>
                     )}
                   </div>
                   <div className="shelter-content">
                     <h3 className="shelter-name">{shelter.name}</h3>
-                    <p className="shelter-location">📍 {shelter.location}</p>
-                    <p className="shelter-description">{shelter.description}</p>
-                    <div className="shelter-meta">
-                      <span className="rating">⭐ {shelter.rating || 'N/A'}</span>
-                      <span className="pets-count">🐾 {shelter.petsCount || 0} mascotas</span>
+                    <div className="shelter-location">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                      </svg>
+                      {shelter.location}
+                    </div>
+                    <div className="shelter-stats">
+                      <div className="shelter-stat">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                        </svg>
+                        {shelter.rating || 'N/A'}
+                      </div>
+                      <div className="shelter-stat">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M4.5 12.75a6 6 0 0 1 6-6h3a6 6 0 0 1 6 6v7.5a.75.75 0 0 1-.75.75h-13.5a.75.75 0 0 1-.75-.75v-7.5Z"/>
+                        </svg>
+                        {shelter.petsCount || 0} mascotas
+                      </div>
                     </div>
                   </div>
                 </div>

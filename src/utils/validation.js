@@ -5,8 +5,8 @@ export const VALIDATION_RULES = {
     required: true,
     minLength: 2,
     maxLength: 100,
-    pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-    message: 'El nombre debe tener entre 2 y 100 caracteres y solo contener letras'
+    pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-\.\(\)]+$/,
+    message: 'El nombre debe tener entre 2 y 100 caracteres y contener solo letras, números, espacios, guiones, puntos y paréntesis'
   },
   
   // Validación de email
@@ -35,8 +35,8 @@ export const VALIDATION_RULES = {
   // Validación de URL de imagen
   imageUrl: {
     required: true,
-    pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i,
-    message: 'Ingresa una URL válida de imagen (jpg, jpeg, png, gif, webp)'
+    pattern: /^https?:\/\/.+/,
+    message: 'Ingresa una URL válida de imagen'
   },
   
   // Validación de descripción
@@ -144,8 +144,8 @@ export class FormValidator {
       name: VALIDATION_RULES.name,
       type: {
         required: true,
-        pattern: /^(perro|gato|otro)$/,
-        message: 'El tipo debe ser perro, gato u otro'
+        pattern: /^(Perro|Gato|Conejo|Hamster)$/,
+        message: 'El tipo debe ser Perro, Gato, Conejo o Hamster'
       },
       age: VALIDATION_RULES.age,
       gender: {
